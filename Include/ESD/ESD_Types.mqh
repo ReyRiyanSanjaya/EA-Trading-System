@@ -107,6 +107,57 @@ struct PerformanceMetrics
     datetime last_update;
 };
 
+// --- ULTIMATE ML V3.0 STRUCTURES ---
+
+enum ENUM_ML_BRAIN_TYPE
+{
+    ML_BRAIN_TREND,
+    ML_BRAIN_REVERSAL,
+    ML_BRAIN_HYBRID
+};
+
+struct ESD_VirtualTrade
+{
+    ulong ticket;           // Virtual ticket ID
+    datetime open_time;
+    int type;              // ORDER_TYPE_BUY or ORDER_TYPE_SELL
+    double open_price;
+    double sl;
+    double tp;
+    double lot;
+    string comment;
+    bool active;
+    
+    int state_id;
+    int action_id;
+    ENUM_ML_BRAIN_TYPE brain_used;
+    
+    // Sniper Reward Tracking
+    double max_unrealized_loss; // Max floating drawdown seen
+    double max_unrealized_profit;
+};
+
+struct ESD_SymbolProfile
+{
+    string symbol;
+    double avg_daily_range;       // Average volatility
+    double spike_probability;     // How often price spikes > 2x ATR
+    double reversion_speed;       // How fast price returns to mean
+    double trend_persistence;     // How likely trend continues
+    double session_volatility[3]; // Asia, London, NY avg volatility
+    int total_samples;
+    datetime last_update;
+};
+
+struct ESD_ML_Brain_State
+{
+    double q_table[729][9]; // Matrix 729 States x 9 Actions
+    double e_table[729][9]; // ELIGIBILITY TRACES (Q-Lambda)
+    bool initialized;
+    double accuracy;
+    int trade_count;
+};
+
 //--- ML Performance Tracking
 struct ESD_ML_Performance
 {
@@ -140,6 +191,7 @@ struct ESD_ML_Features
     double risk_sentiment;
     double rsi;
     double correlation;
+    double higher_tf_trend; // Mata Elang Feature (H4/D1 Trend)
 };
 
 //--- RL Experience REPLAY
@@ -150,6 +202,7 @@ struct Experience
     double reward;
     int next_state;
     bool terminal;
+    double priority; // PER: Priority (TD Error magnitude)
 };
 
 #endif // ESD_TYPES_MQH

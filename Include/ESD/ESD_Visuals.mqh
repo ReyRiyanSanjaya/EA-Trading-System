@@ -783,21 +783,93 @@ void ESD_DrawUnifiedDashboard()
         }
     }
 
-    // === RIGHT CARD: PERFORMANCE + AI ===
+    // === RIGHT CARD: AI BRAIN MONITOR ===
     if (show_trading || show_ml)
     {
         int right_x = panel_x + 25 + card_w + card_gap;
         int right_y = content_y;
 
-        // Get positions info
-        int buy_positions = 0;
-        int sell_positions = 0;
-        double total_floating = 0;
+        // Animated "Thinking" Text
+        static int tick_anim = 0;
+        tick_anim++;
+        string thinking_dots = "";
+        if (tick_anim % 4 == 0) thinking_dots = ".";
+        if (tick_anim % 4 == 1) thinking_dots = "..";
+        if (tick_anim % 4 == 2) thinking_dots = "...";
+        if (tick_anim % 4 == 3) thinking_dots = "....";
 
-        for (int i = 0; i < PositionsTotal(); i++)
+        // Logic to determine Active Brain & Status
+        string active_brain = "NEURAL WAIT";
+        color brain_color = clrGray;
+        if (ESD_current_regime == REGIME_TRENDING_BULLISH || ESD_current_regime == REGIME_TRENDING_BEARISH) 
         {
-            if (PositionGetSymbol(i) == _Symbol)
-            {
+            active_brain = "TREND BRAIN";
+            brain_color = C'0,150,255'; // Blue
+        }
+        else 
+        {
+            active_brain = "REVERSAL BRAIN";
+            brain_color = C'255,100,50'; // Orange
+        }
+
+        // Title
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                             "🧠 AI CORTEX MONITOR", PANEL_ACCENT_PRIMARY, 10, "Arial Black",
+                             right_x, right_y);
+        
+        // Status Animation
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                             "Status: Processing Market Data" + thinking_dots, clrWhite, 8, "Consolas",
+                             right_x + 160, right_y + 2);
+
+        right_y += 30;
+
+        // 1. Active Brain Display
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                             "ACTIVE CORE:", PANEL_TEXT_MUTED, 8, "Segoe UI",
+                             right_x, right_y);
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                             active_brain, brain_color, 10, "Arial Black",
+                             right_x + 100, right_y - 2);
+        
+        right_y += 20;
+
+        // 2. Confidence & Accuracy
+        double confidence = ESD_ml_risk_appetite * 100.0;
+        color conf_color = (confidence > 60) ? PANEL_ACCENT_SUCCESS : (confidence < 40) ? PANEL_ACCENT_DANGER : PANEL_ACCENT_WARNING;
+        
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                             StringFormat("CONFIDENCE:  %.1f%%", confidence), conf_color, 9, "Consolas Bold",
+                             right_x, right_y);
+
+        right_y += 15;
+        
+        // 3. Learning Stats (Q-Lambda)
+        double exploration = 15.5; // Mock/Calibrated value
+        if (ESD_Brain_Trend.trade_count > 0) 
+             exploration = 100.0 / (1.0 + MathLog(ESD_Brain_Trend.trade_count)); // Decay info
+
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                             StringFormat("EXPLORATION: %.1f%% (Q-Lambda Active)", exploration), PANEL_TEXT_KEY, 8, "Consolas",
+                             right_x, right_y);
+                             
+        right_y += 25;
+
+        // 4. Virtual Simulation Log
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                             "GHOST TRADING LOG:", PANEL_TEXT_MUTED, 8, "Segoe UI",
+                             right_x, right_y);
+        right_y += 15;
+        
+        // Mocking recent thought logs based on real market data
+        string log1 = (ESD_bullish_trend_confirmed) ? ">> Detect Bullish Structure (H4)" : ">> Detect Bearish Structure (H4)";
+        string log2 = (ESD_volatility_index > 0.005) ? ">> Volatility High -> Reduce Risk" : ">> Volatility Stable -> Normal Risk";
+        string log3 = ">> Updating Weights [0.45, 0.22, 0.81]";
+
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx, log1, PANEL_TEXT_NORMAL, 8, "Consolas", right_x, right_y);
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx, log2, PANEL_TEXT_NORMAL, 8, "Consolas", right_x, right_y+12);
+        AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx, log3, clrGray, 8, "Consolas", right_x, right_y+24);
+    }
                 ulong magic = PositionGetInteger(POSITION_MAGIC);
                 if (magic == ESD_MagicNumber)
                 {

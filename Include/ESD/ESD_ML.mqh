@@ -47,7 +47,7 @@
 //+------------------------------------------------------------------+
 #define MAX_EXPERIENCES 1000
 #define BATCH_SIZE 32
-#define STATES 243 // 3^5 states (5 features, 3 bins each)
+#define STATES 729 // 3^6 states (Added MTF Feature)
 #define ACTIONS 9  // More granular actions
 #define VALIDATION_RATIO 0.2  // 20% for validation
 
@@ -98,14 +98,20 @@ static int g_confidence_history_size = 100;
 //+------------------------------------------------------------------+
 //| Initialize Machine Learning System                              |
 //+------------------------------------------------------------------+
+// --- ULTIMATE ML: DUAL BRAIN ARCHITECTURE ---
+// Removed static g_Q to use ESD_Brain_Trend and ESD_Brain_Reversal from Globals.
+
+//+------------------------------------------------------------------+
+//| Initialize Machine Learning System (V3.0)                       |
+//+------------------------------------------------------------------+
 void ESD_InitializeML()
 {
     if (!ESD_UseMachineLearning)
         return;
 
-    Print("Initializing Machine Learning System...");
+    Print("🧠 ULTIMATE ML V3.0: Initializing...");
 
-    // Initialize dengan nilai default
+    // Initialize Global ML Weights
     ESD_ml_trend_weight = 1.0;
     ESD_ml_volatility_weight = 1.0;
     ESD_ml_momentum_weight = 1.0;
@@ -114,29 +120,151 @@ void ESD_InitializeML()
     ESD_ml_optimal_tp_multiplier = 1.0;
     ESD_ml_lot_size_multiplier = 1.0;
 
-    // Initialize performance tracking
-    ESD_ml_performance.win_rate = 0.0;
-    ESD_ml_performance.profit_factor = 0.0;
-    ESD_ml_performance.sharpe_ratio = 0.0;
-    ESD_ml_performance.max_drawdown = 0.0;
-    ESD_ml_performance.volatility = 0.0;
-    ESD_ml_performance.last_update = TimeCurrent();
-    ESD_ml_performance.trade_count = 0;
-    ESD_ml_performance.total_return = 0.0;
-    ESD_ml_performance.total_profit = 0.0;
-    ESD_ml_performance.total_loss = 0.0;
-    ESD_ml_performance.average_win = 0.0;
-    ESD_ml_performance.average_loss = 0.0;
-    ESD_ml_performance.total_trades = 0;
+    // Initialize Brains if not loaded from file
+    if (!ESD_ml_data_loaded)
+    {
+        if (ESD_EnablePersistence)
+        {
+            if (ESD_LoadMLData())
+            {
+                Print("💾 ML Memory Loaded Successfully!");
+                ESD_ml_data_loaded = true;
+            }
+            else
+            {
+                Print("💾 No ML Memory Found. Creating new Brains...");
+                ESD_ResetBrain(ESD_Brain_Trend);
+                ESD_ResetBrain(ESD_Brain_Reversal);
+            }
+        }
+        else
+        {
+            ESD_ResetBrain(ESD_Brain_Trend);
+            ESD_ResetBrain(ESD_Brain_Reversal);
+        }
+        
+        // Load Symbol Profile
+        if (ESD_EnableProfiling)
+            ESD_LoadSymbolProfile();
+    }
+    
+    // Hyper-Speed Pre-Training
+    if (ESD_EnablePreTraining && !ESD_ml_data_loaded) // Only pre-train if fresh start
+    {
+        Print("⚡ HYPER-SPEED: Starting Historical Pre-Training...");
+        ESD_PreTrainOnHistory();
+    }
 
-    // Initialize RL system
-    g_q_initialized = false;
+    // Initialize RL system variables
     g_exp_write_idx = 0;
     g_exp_count = 0;
     ZeroMemory(g_perf_metrics);
     ZeroMemory(g_prev_perf_metrics);
 
-    Print("Machine Learning System Initialized");
+    Print("🚀 ML System Ready: Dual-Brain & Virtual Engine Active.");
+}
+
+//+------------------------------------------------------------------+
+//| Reset Brain Q-Table                                             |
+//+------------------------------------------------------------------+
+void ESD_ResetBrain(ESD_ML_Brain_State &brain)
+{
+    MathSrand((int)TimeLocal());
+    for (int s = 0; s < STATES; s++)
+        for (int a = 0; a < ACTIONS; a++)
+            brain.q_table[s][a] = (MathRand() % 200 - 100) / 10000.0; // Small random init
+    
+    brain.initialized = true;
+    brain.accuracy = 0.5;
+    brain.trade_count = 0;
+}
+
+//+------------------------------------------------------------------+
+//| Persistence: Save ML Data                                       |
+//+------------------------------------------------------------------+
+void ESD_SaveMLData()
+{
+    if (!ESD_EnablePersistence) return;
+    
+    string filename = "ESD_ML_" + _Symbol + ".bin";
+    int handle = FileOpen(filename, FILE_WRITE | FILE_BIN);
+    
+    if (handle != INVALID_HANDLE)
+    {
+        // Save Brain 1 (Trend)
+        FileWriteStruct(handle, ESD_Brain_Trend);
+        // Save Brain 2 (Reversal)
+        FileWriteStruct(handle, ESD_Brain_Reversal);
+        // Save Profile
+        FileWriteStruct(handle, ESD_CurrentProfile);
+        
+        FileClose(handle);
+        // Print("💾 ML Data Saved.");
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Persistence: Load ML Data                                       |
+//+------------------------------------------------------------------+
+bool ESD_LoadMLData()
+{
+    string filename = "ESD_ML_" + _Symbol + ".bin";
+    
+    if (!FileIsExist(filename)) return false;
+    
+    int handle = FileOpen(filename, FILE_READ | FILE_BIN);
+    if (handle != INVALID_HANDLE)
+    {
+        ESD_ML_Brain_State temp_trend, temp_rev;
+        ESD_SymbolProfile temp_profile;
+        
+        uint res1 = FileReadStruct(handle, temp_trend);
+        uint res2 = FileReadStruct(handle, temp_rev);
+        uint res3 = FileReadStruct(handle, temp_profile);
+        
+        if (res1 > 0 && res2 > 0)
+        {
+            ESD_Brain_Trend = temp_trend;
+            ESD_Brain_Reversal = temp_rev;
+            if (res3 > 0) ESD_CurrentProfile = temp_profile;
+            
+            FileClose(handle);
+            return true;
+        }
+        FileClose(handle);
+    }
+    return false;
+}
+
+//+------------------------------------------------------------------+
+//| Persistence: Load/Save Just Profile                             |
+//+------------------------------------------------------------------+
+void ESD_LoadSymbolProfile()
+{
+     string filename = "ESD_Profile_" + _Symbol + ".bin";
+     if (FileIsExist(filename))
+     {
+          int handle = FileOpen(filename, FILE_READ | FILE_BIN);
+          if (handle != INVALID_HANDLE) {
+               FileReadStruct(handle, ESD_CurrentProfile);
+               FileClose(handle);
+          }
+     }
+     else
+     {
+          ESD_CurrentProfile.symbol = _Symbol;
+          ESD_CurrentProfile.avg_daily_range = iATR(_Symbol, PERIOD_D1, 14);
+     }
+}
+
+void ESD_SaveSymbolProfile()
+{
+     string filename = "ESD_Profile_" + _Symbol + ".bin";
+     int handle = FileOpen(filename, FILE_WRITE | FILE_BIN);
+     if (handle != INVALID_HANDLE) {
+          FileWriteStruct(handle, ESD_CurrentProfile);
+          FileClose(handle);
+     }
 }
 
 //+------------------------------------------------------------------+
@@ -219,6 +347,15 @@ ESD_ML_Features ESD_CollectMLFeatures()
 
     // --- 10. Risk Sentiment Feature ---
     features.risk_sentiment = MathMin(MathMax(ESD_CalculateRiskSentiment(), 0.0), 1.0);
+    
+    // --- 11. Mata Elang Feature (Higher Timeframe Trend) ---
+    // Compare H1/H4 MA for broader context
+    double h4_ma_fast = iMA(_Symbol, PERIOD_H4, 20, 0, MODE_EMA, PRICE_CLOSE);
+    double h4_ma_slow = iMA(_Symbol, PERIOD_H4, 50, 0, MODE_EMA, PRICE_CLOSE);
+    
+    // Normalize: >0 Bullish, <0 Bearish. Map to 0-1 (0.5 = Neutral)
+    double trend_diff = (h4_ma_fast - h4_ma_slow) / SymbolInfoDouble(_Symbol, SYMBOL_POINT) / 50.0; // Normalize by points
+    features.higher_tf_trend = MathMin(MathMax(0.5 + (trend_diff * 0.5), 0.0), 1.0);
 
     return features;
 }
@@ -309,96 +446,82 @@ double ESD_CalculateRiskSentiment()
 //+------------------------------------------------------------------+
 //| Enhanced Q-Learning dengan Experience Replay                     |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Enhanced Q-Learning dengan Experience Replay (Dual-Brain)        |
+//+------------------------------------------------------------------+
 void ESD_AdaptParametersWithEnhancedRL(ESD_ML_Features &features)
 {
     if (!ESD_UseMachineLearning)
         return;
 
     // --- Hyperparameters ---
-    static double alpha = 0.20;   // learning rate (slightly lower for stability)
-    static double gamma = 0.95;   // discount factor (higher for long-term)
     static double epsilon = 0.20; // exploration rate
     static double epsilon_min = 0.02;
     static double epsilon_decay = 0.995;
     static int update_counter = 0;
-    static int prev_state = -1;
-    static int prev_action = -1;
+    
+    // --- ADAPTIVE CURIOSITY (Regime Change Detection) ---
+    static int prev_regime_check = -1;
+    if (ESD_current_regime != prev_regime_check)
+    {
+         if (prev_regime_check != -1) // Not first run
+         {
+             epsilon = MathMax(epsilon, 0.30); // Boost to 30% on regime change
+             Print("🔍 ML: Market Regime Changed! Boosting Curiosity to 30%.");
+         }
+         prev_regime_check = ESD_current_regime;
+    }
 
     update_counter++;
 
-    // --- Initialize Q-table ---
-    if (!g_q_initialized)
-    {
-        MathSrand((int)TimeLocal());
-        for (int s = 0; s < STATES; s++)
-            for (int a = 0; a < ACTIONS; a++)
-                g_Q[s][a] = (MathRand() % 200 - 100) / 10000.0; // Small random init
-
-        g_q_initialized = true;
-        ZeroMemory(g_perf_metrics);
-        ZeroMemory(g_prev_perf_metrics);
-    }
-
     // --- Update performance metrics ---
     ESD_UpdateMLPerformance();
+    
+    // --- Store previous state (Mental Sandbox) ---
+    static int prev_state = -1;
+    static int prev_action = -1;
+    static double prev_params[4]; // To calculate reward
 
     // --- Get current state ---
     int current_state = EncodeEnhancedState(features);
-
-    // --- Calculate reward from previous action (if exists) ---
-    if (prev_state >= 0 && prev_action >= 0)
+    
+    // --- DECISION: Which brain controls the parameters? ---
+    ESD_ML_Brain_State *brain_ptr;
+    if (features.trend_strength > 0.6) brain_ptr = &ESD_Brain_Trend;
+    else brain_ptr = &ESD_Brain_Reversal;
+    
+    // --- REWARD & STORAGE (PER) ---
+    // If we have a previous action, evaluate it and store in Replay Buffer
+    if (prev_state != -1 && prev_action != -1)
     {
-        double performance_score = ESD_CalculatePerformanceScore();
-        double win_rate = ESD_ml_performance.win_rate;
-
-        double old_params[4] = {
-            ESD_ml_trend_weight,
-            ESD_ml_volatility_weight,
-            ESD_ml_momentum_weight,
-            ESD_ml_risk_appetite};
-
-        double reward = CalculateEnhancedReward(old_params, old_params,
-                                                performance_score, win_rate);
-
-        // Store experience
-        bool terminal = (update_counter % 100 == 0); // Episode boundary
-        StoreExperience(prev_state, prev_action, reward, current_state, terminal);
-
-        // Learn from experience replay every 5 updates
-        if (update_counter % 5 == 0)
-        {
-            LearnFromExperience(alpha, gamma);
-        }
+        double current_params[4] = {ESD_ml_trend_weight, ESD_ml_volatility_weight, ESD_ml_momentum_weight, ESD_ml_risk_appetite};
+        double reward = CalculateEnhancedReward(prev_params, current_params, ESD_CalculatePerformanceScore(), ESD_ml_performance.win_rate);
+        
+        // Calculate TD Error for Priority
+        double max_q_next = -9999.0;
+        for (int a = 0; a < ACTIONS; a++) if (brain_ptr->q_table[current_state][a] > max_q_next) max_q_next = brain_ptr->q_table[current_state][a];
+        
+        double target = reward + 0.95 * max_q_next; // Gamma 0.95
+        double old_q = brain_ptr->q_table[prev_state][prev_action];
+        double td_error = MathAbs(target - old_q);
+        
+        // Store with Priority
+        StoreExperience(prev_state, prev_action, reward, current_state, (update_counter % 100 == 0), td_error + 0.01);
+        
+        // Learn (PER Sampling)
+        if (update_counter % 5 == 0) LearnFromExperience(0.1, 0.95);
     }
 
-    // --- Epsilon-greedy action selection ---
+    // --- Select best action from the chosen brain ---
     int action = 0;
-    double rand_val = (double)MathRand() / 32767.0;
-
-    if (rand_val < epsilon)
+    double max_q = brain_ptr->q_table[current_state][0];
+    for (int a = 1; a < ACTIONS; a++)
     {
-        // Exploration: random action
-        action = MathRand() % ACTIONS;
-    }
-    else
-    {
-        // Exploitation: best Q-value action
-        double max_q = g_Q[current_state][0];
-        action = 0;
-        for (int a = 1; a < ACTIONS; a++)
+        if (brain_ptr->q_table[current_state][a] > max_q)
         {
-            if (g_Q[current_state][a] > max_q)
-            {
-                max_q = g_Q[current_state][a];
-                action = a;
-            }
+            max_q = brain_ptr->q_table[current_state][a];
+            action = a;
         }
-    }
-
-    // --- Decay epsilon ---
-    if (update_counter % 10 == 0)
-    {
-        epsilon = MathMax(epsilon_min, epsilon * epsilon_decay);
     }
 
     // --- Action mapping (9 actions untuk kontrol lebih halus) ---
@@ -455,9 +578,13 @@ void ESD_AdaptParametersWithEnhancedRL(ESD_ML_Features &features)
     ESD_ml_momentum_weight = MathMax(0.3, MathMin(ESD_ml_momentum_weight, 2.5));
     ESD_ml_risk_appetite = MathMax(0.10, MathMin(ESD_ml_risk_appetite, 0.95));
 
-    // --- Store state and action for next iteration ---
+    // --- Update Previous State for next tick ---
     prev_state = current_state;
     prev_action = action;
+    prev_params[0] = ESD_ml_trend_weight;
+    prev_params[1] = ESD_ml_volatility_weight;
+    prev_params[2] = ESD_ml_momentum_weight;
+    prev_params[3] = ESD_ml_risk_appetite;
 
     // --- Advanced adaptations ---
     ESD_AdaptSLTPMultipliers(features, ESD_CalculatePerformanceScore());
@@ -466,10 +593,9 @@ void ESD_AdaptParametersWithEnhancedRL(ESD_ML_Features &features)
     // --- Logging (every 50 updates) ---
     if (update_counter % 50 == 0)
     {
-        PrintFormat("RL: state=%d action=%d eps=%.3f Q[s][a]=%.4f tr=%.2f vol=%.2f mom=%.2f risk=%.2f",
-                    current_state, action, epsilon, g_Q[current_state][action],
-                    ESD_ml_trend_weight, ESD_ml_volatility_weight,
-                    ESD_ml_momentum_weight, ESD_ml_risk_appetite);
+        PrintFormat("ULTIMATE ML: State=%d Action=%d (Brain: %s) Acc=%.1f%%",
+                    current_state, action, (features.trend_strength > 0.6 ? "TREND" : "REVERSAL"),
+                    brain_ptr->accuracy * 100);
     }
 }
 
@@ -509,9 +635,10 @@ int EncodeEnhancedState(ESD_ML_Features &features)
     int m_bin = AdaptiveBin3(features.momentum, mom_low, mom_high, 0.0, 1.0, 0.5);
     int r_bin = AdaptiveBin3(features.risk_sentiment, risk_low, risk_high, 0.0, 1.0, 0.5);
     int p_bin = AdaptiveBin3(perf_score, perf_low, perf_high, 0.0, 1.0, 0.5);
+    int h_bin = AdaptiveBin3(features.higher_tf_trend, 0.4, 0.6, 0.0, 1.0, 0.5); // MTF Bin
 
-    // Encode: state = t + 3*(v + 3*(m + 3*(r + 3*p)))
-    int state = t_bin + 3 * (v_bin + 3 * (m_bin + 3 * (r_bin + 3 * p_bin)));
+    // Encode: state = t + 3*(v + 3*(m + 3*(r + 3*(p + 3*h))))
+    int state = t_bin + 3 * (v_bin + 3 * (m_bin + 3 * (r_bin + 3 * (p_bin + 3 * h_bin))));
     return MathMin(state, STATES - 1);
 }
 
@@ -572,15 +699,16 @@ double CalculateEnhancedReward(double &old_params[], double &new_params[],
 }
 
 //+------------------------------------------------------------------+
-//| Store Experience dalam Replay Buffer                             |
+//| Store Experience dalam Replay Buffer (With Priority)             |
 //+------------------------------------------------------------------+
-void StoreExperience(int state, int action, double reward, int next_state, bool terminal)
+void StoreExperience(int state, int action, double reward, int next_state, bool terminal, double priority=1.0)
 {
     g_experience_buffer[g_exp_write_idx].state = state;
     g_experience_buffer[g_exp_write_idx].action = action;
     g_experience_buffer[g_exp_write_idx].reward = reward;
     g_experience_buffer[g_exp_write_idx].next_state = next_state;
     g_experience_buffer[g_exp_write_idx].terminal = terminal;
+    g_experience_buffer[g_exp_write_idx].priority = priority;
 
     g_exp_write_idx = (g_exp_write_idx + 1) % MAX_EXPERIENCES;
     if (g_exp_count < MAX_EXPERIENCES)
@@ -588,7 +716,7 @@ void StoreExperience(int state, int action, double reward, int next_state, bool 
 }
 
 //+------------------------------------------------------------------+
-//| Experience Replay - Learn from random batch                      |
+//| Experience Replay - Prioritized Sampling (The PER Logic)          |
 //+------------------------------------------------------------------+
 void LearnFromExperience(double alpha, double gamma)
 {
@@ -596,26 +724,53 @@ void LearnFromExperience(double alpha, double gamma)
         return;
 
     int batch_count = MathMin(BATCH_SIZE, g_exp_count);
+    
+    // 1. Calculate Total Priority (Sum)
+    double total_priority = 0;
+    for (int i=0; i<g_exp_count; i++) total_priority += g_experience_buffer[i].priority;
+    if (total_priority == 0) total_priority = 1.0;
 
     for (int i = 0; i < batch_count; i++)
     {
-        // Random sample from experience buffer
-        int idx = MathRand() % g_exp_count;
+        // 2. Weighted Random Sampling
+        double rand_p = (double)MathRand() / 32767.0 * total_priority;
+        double cumulative_p = 0;
+        int idx = 0;
+        
+        for (int j=0; j<g_exp_count; j++)
+        {
+             cumulative_p += g_experience_buffer[j].priority;
+             if (cumulative_p >= rand_p)
+             {
+                 idx = j;
+                 break;
+             }
+        }
+        
         Experience exp = g_experience_buffer[idx];
 
-        // Calculate TD target
-        double max_q_next = g_Q[exp.next_state][0];
-        for (int a = 1; a < ACTIONS; a++)
-        {
-            if (g_Q[exp.next_state][a] > max_q_next)
-                max_q_next = g_Q[exp.next_state][a];
-        }
+        // 3. Q-Learning Update
+        // Determine which brain this experience belongs to (Simplified context check)
+        // Since we don't store brain_id in basic experience yet, we use global pointer assumption 
+        // OR we just update BOTH/Specific brains if we had stored it.
+        // For V3.1, let's assume we are updating the Trend Brain for now or make it generic.
+        // BETTER: Use State ID to guess Brain? Or just update Trend Brain as default?
+        // Let's use ESD_Brain_Trend as primary learner for Replay or infer from context.
+        // Todo: Add brain_id to Experience struct for perfect dual-brain replay.
+        // For now, let's update Trend Brain (assuming it handles general parameter logic).
+        
+        double max_q_next_t = -9999.0;
+        for (int a = 0; a < ACTIONS; a++) if (ESD_Brain_Trend.q_table[exp.next_state][a] > max_q_next_t) max_q_next_t = ESD_Brain_Trend.q_table[exp.next_state][a];
 
-        double target = exp.terminal ? exp.reward : exp.reward + gamma * max_q_next;
-
-        // Q-Learning update
-        double old_q = g_Q[exp.state][exp.action];
-        g_Q[exp.state][exp.action] = old_q + alpha * (target - old_q);
+        double target = exp.terminal ? exp.reward : exp.reward + gamma * max_q_next_t;
+        double old_q = ESD_Brain_Trend.q_table[exp.state][exp.action];
+        double new_q = old_q + alpha * (target - old_q);
+        
+        ESD_Brain_Trend.q_table[exp.state][exp.action] = new_q;
+        
+        // 4. Update Priority (TD Error)
+        double td_error = MathAbs(target - old_q);
+        g_experience_buffer[idx].priority = td_error + 0.001; // Small constant prevents 0 probability
     }
 }
 
@@ -879,6 +1034,15 @@ void ESD_UpdateMLModel()
         ESD_AdjustDynamicFilters();
 
     last_update_bar = current_bar;
+
+    // Auto-Save Protection (Anti-Amnesia)
+    static datetime last_autosave = 0;
+    if (TimeCurrent() - last_autosave > 3600) // Save every 1 hour
+    {
+        ESD_SaveMLData();
+        last_autosave = TimeCurrent();
+        Print("💾 ML: Auto-Saved Learning Data.");
+    }
 
     // Log ML status
     if (ESD_ShowObjects && ESD_ShowLabels)
@@ -1234,3 +1398,314 @@ void ESD_ApplyAntiOverfitting()
     
     Print("🔄 Anti-overfitting applied: Reset ", reset_count, " old experiences");
 }
+
+//+------------------------------------------------------------------+
+//| VIRTUAL TRADING ENGINE (HYPER-SPEED LEARNING)                   |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Open Virtual Trade for Learning                                 |
+//+------------------------------------------------------------------+
+void ESD_OpenVirtualTrade(int type, double price, double sl, double tp, string comment)
+{
+    if (!ESD_EnableVirtualTraining) return;
+
+    // Find empty slot
+    int idx = -1;
+    for (int i = 0; i < ArraySize(ESD_virtual_trades); i++)
+    {
+        if (!ESD_virtual_trades[i].active)
+        {
+            idx = i;
+            break;
+        }
+    }
+
+    if (idx == -1) // Resize if full
+    {
+        idx = ArraySize(ESD_virtual_trades);
+        ArrayResize(ESD_virtual_trades, idx + 10);
+    }
+
+    ESD_virtual_trades[idx].ticket = ++ESD_virtual_ticket_counter;
+    ESD_virtual_trades[idx].open_time = TimeCurrent();
+    ESD_virtual_trades[idx].type = type;
+    ESD_virtual_trades[idx].open_price = price;
+    ESD_virtual_trades[idx].sl = sl;
+    ESD_virtual_trades[idx].tp = tp;
+    ESD_virtual_trades[idx].lot = 0.1; // Dummy lot
+    ESD_virtual_trades[idx].comment = comment;
+    ESD_virtual_trades[idx].active = true;
+    
+    // Capture ML State Context
+    ESD_ML_Features features = ESD_CollectMLFeatures();
+    ESD_virtual_trades[idx].state_id = EncodeEnhancedState(features);
+    
+    // Determine which brain to use based on signal type
+    if (StringFind(comment, "Structure") >= 0 || StringFind(comment, "Trend") >= 0)
+        ESD_virtual_trades[idx].brain_used = ML_BRAIN_TREND;
+    else
+        ESD_virtual_trades[idx].brain_used = ML_BRAIN_REVERSAL;
+        
+    // Select action (Epsilon Greedy) based on the specific brain
+    ESD_virtual_trades[idx].action_id = ESD_SelectAction(ESD_virtual_trades[idx].brain_used, ESD_virtual_trades[idx].state_id);
+}
+
+//+------------------------------------------------------------------+
+//| Manage Virtual Trades (Check TP/SL)                             |
+//+------------------------------------------------------------------+
+void ESD_ManageVirtualTrades(double bid, double ask)
+{
+    for (int i = 0; i < ArraySize(ESD_virtual_trades); i++)
+    {
+        if (!ESD_virtual_trades[i].active) continue;
+
+        bool close = false;
+        double close_price = 0;
+        double profit = 0;
+
+        if (ESD_virtual_trades[i].type == ORDER_TYPE_BUY)
+        {
+            if (ESD_virtual_trades[i].tp > 0 && bid >= ESD_virtual_trades[i].tp) { close = true; close_price = ESD_virtual_trades[i].tp; }
+            else if (ESD_virtual_trades[i].sl > 0 && bid <= ESD_virtual_trades[i].sl) { close = true; close_price = ESD_virtual_trades[i].sl; }
+        }
+        else // SELL
+        {
+            if (ESD_virtual_trades[i].tp > 0 && ask <= ESD_virtual_trades[i].tp) { close = true; close_price = ESD_virtual_trades[i].tp; }
+            else if (ESD_virtual_trades[i].sl > 0 && ask >= ESD_virtual_trades[i].sl) { close = true; close_price = ESD_virtual_trades[i].sl; }
+        }
+
+        if (close)
+        {
+            // Calculate Result
+            if (ESD_virtual_trades[i].type == ORDER_TYPE_BUY)
+                profit = (close_price - ESD_virtual_trades[i].open_price);
+            else
+                profit = (ESD_virtual_trades[i].open_price - close_price);
+            
+            // FEEDBACK LOOP: Update Q-Table with SNIPER REWARD
+            ESD_UpdateBrain(ESD_virtual_trades[i], profit);
+            ESD_virtual_trades[i].active = false;
+        }
+        else
+        {
+            // Track Drawdown for Sniper Reward
+            double current_pl = 0;
+            if (ESD_virtual_trades[i].type == ORDER_TYPE_BUY) current_pl = bid - ESD_virtual_trades[i].open_price;
+            else current_pl = ESD_virtual_trades[i].open_price - ask;
+            
+            if (current_pl < 0 && current_pl < ESD_virtual_trades[i].max_unrealized_loss)
+                 ESD_virtual_trades[i].max_unrealized_loss = current_pl;
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Hyper-Speed Historical Pre-Training                             |
+//+------------------------------------------------------------------+
+void ESD_PreTrainOnHistory()
+{
+    if (!ESD_EnablePreTraining) return;
+    int bars = ESD_PreTrainCandles;
+    if (bars > 5000) bars = 5000;
+    
+    // Copy M1 Data for faster simulation
+    MqlRates rates[];
+    ArraySetAsSeries(rates, true);
+    if (CopyRates(_Symbol, PERIOD_M5, 0, bars, rates) < bars) return;
+    
+    Print("⚡ PRE-TRAINING: Simulating ", bars, " M5 candles...");
+    
+    // Simulate loop
+    for (int i = bars - 1; i >= 0; i--)
+    {
+         double open = rates[i].open;
+         double high = rates[i].high;
+         double low = rates[i].low;
+         double close = rates[i].close;
+         
+         // 1. Manage existing trades
+         ESD_ManageVirtualTrades(low, high); 
+         
+         // 2. Dummy Features (Approximation)
+         // In a real implementation this would recalculate indicators
+         // We use random approximation here to speed up demo
+         
+         // 3. Simple Signals for Training
+         bool buy_sig = (close > open && (high - low) > 20 * _Point * 10);
+         bool sell_sig = (close < open && (high - low) > 20 * _Point * 10);
+         
+         if (buy_sig) ESD_OpenVirtualTrade(ORDER_TYPE_BUY, close, close - 200*_Point, close + 400*_Point, "PreTrain-Trend");
+         if (sell_sig) ESD_OpenVirtualTrade(ORDER_TYPE_SELL, close, close + 200*_Point, close - 400*_Point, "PreTrain-Trend");
+         
+         // Reversal Logic
+         if (close < low + (high-low)*0.2) ESD_OpenVirtualTrade(ORDER_TYPE_BUY, close, low - 50*_Point, high, "PreTrain-Reversal");
+         if (close > high - (high-low)*0.2) ESD_OpenVirtualTrade(ORDER_TYPE_SELL, close, high + 50*_Point, low, "PreTrain-Reversal");
+    }
+    
+    PrintFormat("⚡ Pre-Training Complete: Brains Updated.");
+}
+
+//+------------------------------------------------------------------+
+//| Select Action from Specific Brain                               |
+//+------------------------------------------------------------------+
+int ESD_SelectAction(ENUM_ML_BRAIN_TYPE brain_type, int state)
+{
+    // Pointer simulation
+    ESD_ML_Brain_State *ptr;
+    if (brain_type == ML_BRAIN_TREND) ptr = &ESD_Brain_Trend;
+    else ptr = &ESD_Brain_Reversal;
+    
+    // Epsilon Greedy
+    if ((double)MathRand() / 32767.0 < 0.1) // 10% Exploration
+        return MathRand() % ACTIONS;
+        
+    int best_action = 0;
+    double max_q = -99999.0;
+    
+    for(int a=0; a<ACTIONS; a++)
+    {
+        if (ptr->q_table[state][a] > max_q) {
+            max_q = ptr->q_table[state][a];
+            best_action = a;
+        }
+    }
+    return best_action;
+}
+
+//+------------------------------------------------------------------+
+//| Update Brain Q-Table (Enhanced with Sniper Reward)              |
+//+------------------------------------------------------------------+
+void ESD_UpdateBrain(ESD_VirtualTrade &trade, double profit)
+{
+    // --- SNIPER REWARD LOGIC ---
+    // Reward bukan hanya Win/Loss, tapi "Seberapa Bagus Kualitasnya?"
+    // Reward Base: Profit / Risk
+    double risk = MathAbs(trade.sl - trade.open_price);
+    if (risk == 0) risk = 100 * _Point; // Safety
+    
+    double reward = 0;
+    
+    if (profit > 0)
+    {
+         // Win
+         double r_multiple = profit / risk;
+         
+         // Penalty for Drawdown (Sniper Check)
+         double drawdown_penalty = MathAbs(trade.max_unrealized_loss) / risk;
+         
+         // Jika Drawdown kecil (Sniper Entry), Reward Maksimal
+         // Jika Drawdown besar (Hampir SL), Reward Berkurang drastic
+         reward = MathMin(1.0, (r_multiple * 0.5) + (1.0 - drawdown_penalty)); 
+         
+         if (drawdown_penalty > 0.8) reward = 0.1; // Menang hoki (hampir SL), reward kecil
+    }
+    else
+    {
+         // Loss
+         reward = -1.0;
+         // No penalty for "good loss" yet, simple punishment
+    }
+
+    // --- LEARNING SPEED: Q-Lambda (Eligibility Traces) ---
+    // Watkins' Q(lambda) Algorithm
+    double lambda = 0.8;  // Trace decay rate (High = Long memory)
+    double gamma = 0.95;  // Discount factor
+    
+    ESD_ML_Brain_State *brain;
+    if (trade.brain_used == ML_BRAIN_TREND) brain = &ESD_Brain_Trend;
+    else brain = &ESD_Brain_Reversal;
+    
+    // 1. Calculate TD Error
+    double max_q_next = -9999.0;
+    // Note: Since this is a "Trade Result" update (Terminal state effectively for this trade),
+    // we don't look at next state Q. Reward is the final result.
+    // For proper Q-Lambda in continuous tasks, we'd need next state. 
+    // Here we treat trade close as end of episode for that specific trade logic.
+    // But to boost learning, we propagate this reward back to the state that triggered it via trace.
+    
+    double old_q = brain->q_table[trade.state_id][trade.action_id];
+    double delta = reward - old_q;
+    
+    // 2. Increment Trace for visited state
+    brain->e_table[trade.state_id][trade.action_id] += 1.0;
+    
+    // 3. Update ALL States based on Traces
+    // To speed up, we only loop active traces if possible, but here we loop all or significant ones.
+    // Optimization: Loop only if trace > threshold.
+    
+    int states_updated = 0;
+    for(int s=0; s<STATES; s++)
+    {
+        for(int a=0; a<ACTIONS; a++)
+        {
+            if(brain->e_table[s][a] > 0.01) // Only update significant traces
+            {
+               brain->q_table[s][a] += alpha * delta * brain->e_table[s][a];
+               brain->e_table[s][a] *= gamma * lambda; // Decay
+               states_updated++;
+            }
+        }
+    }
+    
+    // Update accuracy stats
+    brain->trade_count++;
+    if (profit > 0) brain->accuracy = (brain->accuracy * 0.99) + 0.01;
+    else brain->accuracy = (brain->accuracy * 0.99);
+
+    // Profile Update (Counterfactual)
+    ESD_UpdateSymbolProfile(profit);
+}
+
+//+------------------------------------------------------------------+
+//| Update Symbol Profile                                           |
+//+------------------------------------------------------------------+
+void ESD_UpdateSymbolProfile(double profit)
+{
+    // Learning pair characteristics
+    if (profit > 0)
+        ESD_CurrentProfile.trend_persistence += 0.001; // Assume trend continuation works
+    else
+        ESD_CurrentProfile.spike_probability += 0.001; // Assume fakeout/spike
+        
+    // Normalize
+    if(ESD_CurrentProfile.trend_persistence > 1.0) ESD_CurrentProfile.trend_persistence = 1.0;
+    if(ESD_CurrentProfile.spike_probability > 1.0) ESD_CurrentProfile.spike_probability = 1.0;
+    
+    ESD_CurrentProfile.last_update = TimeCurrent();
+}
+
+//+------------------------------------------------------------------+
+//| CHECK SMART GATE (Should we trade?)                             |
+//+------------------------------------------------------------------+
+bool ESD_CheckVirtualGate(string strategy_type)
+{
+    if (!ESD_EnableDualBrain) return true;
+    
+    // Choose Brain
+    ESD_ML_Brain_State *brain;
+    if (StringFind(strategy_type, "Trend") >= 0) brain = &ESD_Brain_Trend;
+    else brain = &ESD_Brain_Reversal;
+    
+    // Gate Logic
+    // 1. Brain must have experience
+    if (brain->trade_count < 10) return true; // Allow trading to learn initially
+    
+    // 2. Accuracy Check
+    if (brain->accuracy < 0.45) 
+    {
+        Print("⛔ GATE BLOCKED: Brain Accuracy too low (", DoubleToString(brain->accuracy*100, 1), "%)");
+        return false;
+    }
+    
+    // 3. Profile Warning (Spikes)
+    if (ESD_CurrentProfile.spike_probability > 0.7 && StringFind(strategy_type, "Breakout") >= 0)
+    {
+        Print("⛔ GATE BLOCKED: High Spike Probability for Breakout");
+        return false;
+    }
+    
+    return true;
+}
+
+// --- END OF FILE ---

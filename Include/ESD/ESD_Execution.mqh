@@ -1,16 +1,43 @@
 ﻿//+------------------------------------------------------------------+
-//|                                                      ESD_Execution.mqh |
-//|                                                              SMC |
-//|                                             https://www.mql5.com |
+//|                        ESD TRADING FRAMEWORK                      |
+//|                       ESD_Execution.mqh                           |
+//+------------------------------------------------------------------+
+//| MODULE: Trade Execution & Management
+//|
+//| DESCRIPTION:
+//|   Handles the execution of trade orders, including:
+//|   - Aggressive Entry Logic (Buy/Sell)
+//|   - ML-Enhanced Entry Logic (Buy/Sell)
+//|   - Partial Take Profit Management (TP1, TP2, TP3)
+//|   - Structure-Based Trailing Stop
+//|   - Profit Protection Mechanisms
+//|
+//| DEPENDENCIES:
+//|   - ESD_Globals.mqh
+//|   - ESD_Inputs.mqh
+//|   - ESD_Trend.mqh
+//|   - ESD_Core.mqh
+//|   - ESD_ML.mqh
+//|
+//| PUBLIC FUNCTIONS:
+//|   - ESD_ExecuteAggressiveBuy()      : Execute aggressive buy order
+//|   - ESD_ExecuteAggressiveSell()     : Execute aggressive sell order
+//|   - ESD_ExecuteMLAggressiveBuy()    : ML-enhanced buy order
+//|   - ESD_ExecuteMLAggressiveSell()   : ML-enhanced sell order
+//|   - ESD_ManagePartialTP()           : Monitor and execute partial TPs
+//|   - ESD_ManageStructureTrailing()   : Update trailing stops
+//|
+//| VERSION: 2.1 | LAST UPDATED: 2025-12-17
 //+------------------------------------------------------------------+
 #property copyright "SMC"
 #property link      "https://www.mql5.com"
 
 #include "ESD_Globals.mqh"
 #include "ESD_Inputs.mqh"
-
-#include "ESD_Globals.mqh"
-#include "ESD_Inputs.mqh"
+//+------------------------------------------------------------------+
+//| Execute Aggressive Buy Order                                      |
+//| Enters trade immediately if confirmation conditions are met       |
+//+------------------------------------------------------------------+
 void ESD_ExecuteAggressiveBuy(string signal_type, double trigger_price, datetime signal_time)
 {
     // Jika sudah ada posisi, tidak usah entry lagi

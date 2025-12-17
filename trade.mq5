@@ -105,6 +105,13 @@ void OnDeinit(const int reason)
     // Dragon Indicator Release
     IndicatorRelease(emaHandle);
     
+
+    // Save ML Data (Persistence)
+    if (ESD_UseMachineLearning)
+    {
+         ESD_SaveMLData();
+    }
+
     Print("ESD Trading System Deinitialized. Reason: ", reason);
 }
 
@@ -113,6 +120,14 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+    // ═══════════════════════════════════════════════════════════════
+    // PHASE 0: VIRTUAL LEARNING (Always Active)
+    // ═══════════════════════════════════════════════════════════════
+    if (ESD_UseMachineLearning)
+    {
+         ESD_ManageVirtualTrades(SymbolInfoDouble(_Symbol, SYMBOL_BID), SymbolInfoDouble(_Symbol, SYMBOL_ASK));
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // PHASE 1: POSITION MANAGEMENT
     // ═══════════════════════════════════════════════════════════════

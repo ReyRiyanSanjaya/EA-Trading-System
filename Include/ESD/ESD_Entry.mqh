@@ -34,6 +34,7 @@
 #include "ESD_Execution.mqh"
 #include "ESD_Risk.mqh"
 #include "ESD_Core.mqh"
+#include "ESD_ML.mqh"
 
 //+------------------------------------------------------------------+
 //| Check for Main Entry Signal                                     |
@@ -43,6 +44,12 @@ void ESD_CheckForEntry()
     // Jika sudah ada posisi, tidak usah entry lagi
     // if (PositionSelect(_Symbol))
     //     return;
+
+    // --- 0. CIRCUIT BREAKER CHECK (Hard Stop) ---
+    if (ESD_CheckHardCircuitBreaker())
+    {
+        return; // STOP TRADING FOR THE DAY
+    }
 
     // ?? PRIORITAS 1: ENTRY BERDASARKAN INDUCEMENT (False Breakout)
     if (ESD_TradeAgainstInducement())
@@ -177,6 +184,10 @@ void ESD_CheckForEntry()
 
             if (confirmed)
             {
+                // 🧠 ULTIMATE ML GATE CHECK
+                if (!ESD_CheckVirtualGate("Trend-" + zone_type))
+                    return;
+
                 // --- PERHITUNGAN SL & TP ---
                 double sl = 0;
                 double tp = 0;
@@ -333,6 +344,10 @@ void ESD_CheckForEntry()
 
             if (confirmed)
             {
+                // 🧠 ULTIMATE ML GATE CHECK
+                if (!ESD_CheckVirtualGate("Trend-" + zone_type))
+                    return;
+
                 // --- PERHITUNGAN SL & TP ---
                 double sl = 0;
                 double tp = 0;

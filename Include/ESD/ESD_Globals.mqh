@@ -157,3 +157,12 @@ datetime ESD_last_bsl_ssl_update = 0;
 
 // Filter Status Array
 ESD_FilterStatus ESD_filter_status[];
+
+// --- ULTIMATE ML GLOBALS ---
+ESD_ML_Brain_State ESD_Brain_Trend;     // Specialist Brain 1
+ESD_ML_Brain_State ESD_Brain_Reversal;  // Specialist Brain 2
+ESD_SymbolProfile  ESD_CurrentProfile;  // Current Pair Personality
+
+ESD_VirtualTrade   ESD_virtual_trades[]; // Virtual positions array
+int                ESD_virtual_ticket_counter = 0;
+bool               ESD_ml_data_loaded = false;

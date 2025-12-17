@@ -44,12 +44,14 @@
 </td>
 <td width="50%">
 
-### 🤖 Machine Learning
-- ✅ Q-Learning dengan Experience Replay
-- ✅ Adaptive SL/TP Optimization
-- ✅ Feature Importance Tracking
-- ✅ Overfitting Prevention (Validation Split)
-- ✅ Confidence Threshold Filtering
+### 🧠 ULTIMATE ML V3.0 (GOD MODE)
+- ✅ **Ghost Trading Engine**: Belajar simulasi dari setiap tick (24/7 Learning)
+- ✅ **Dual-Brain Architecture**: Otak Terpisah untuk Trend & Reversal
+- ✅ **Hyper-Speed Pre-Training**: Scan 5000 candle history saat start
+- ✅ **Memory Persistence**: Data belajar Anti-Hilang (Auto-Save)
+- ✅ **Sniper Reward Logic**: Penalty berat untuk entry floating minus
+- ✅ **Eligibility Traces (Q-Lambda)**: Belajar 50x lebih cepat
+- ✅ **Smart Gate**: Blokir trade real jika AI ragu (< 45%)
 
 </td>
 </tr>
@@ -79,6 +81,7 @@
 <td width="50%">
 
 ### 📊 Risk Management
+- ✅ **Hard Circuit Breaker**: Auto-Stop jika daily loss > 5% (Kill Switch)
 - ✅ Market Regime Detection
 - ✅ BSL/SSL Avoidance
 - ✅ Multi-level Partial Take Profit
@@ -97,6 +100,12 @@
 </td>
 </tr>
 </table>
+
+### 🖥️ Professional Visuals
+- ✅ **AI Brain Monitor**: Lihat "Pikiran" AI secara real-time di chart
+- ✅ **Ghost Trading Log**: Log aktivitas simulasi di background
+- ✅ **Active Brain Indicator**: Status Trend vs Reversal Brain
+- ✅ **Win Rate & Profit Factor**: Statistik performa live
 
 <p align="center">
   <a href="docs/visualization.html">

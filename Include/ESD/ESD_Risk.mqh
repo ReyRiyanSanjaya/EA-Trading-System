@@ -35,6 +35,11 @@
 #include "ESD_Globals.mqh"
 #include "ESD_Inputs.mqh"
 
+// --- CIRCUIT BREAKER GLOBALS ---
+double ESD_daily_loss_accumulated = 0;
+datetime ESD_last_loss_check_day = 0;
+bool ESD_circuit_breaker_tripped = false;
+
 //+------------------------------------------------------------------+
 //| Detect Market Regime                                              |
 //| Uses ATR and linear regression to classify market conditions     |
@@ -543,5 +548,49 @@ bool ESD_IsInBSL_SSLZone(double price, bool is_buy_signal)
         }
     }
 
+    return false;
+}
+
+//+------------------------------------------------------------------+
+//| HARD CIRCUIT BREAKER: Check Daily Loss Limit                      |
+//| Returns TRUE if trading should be STOPPED (Kill Switch)           |
+//+------------------------------------------------------------------+
+bool ESD_CheckHardCircuitBreaker()
+{
+    // Reset counter on new day
+    if (TimeDay(TimeCurrent()) != TimeDay(ESD_last_loss_check_day))
+    {
+        ESD_daily_loss_accumulated = 0;
+        ESD_circuit_breaker_tripped = false;
+        ESD_last_loss_check_day = TimeCurrent();
+    }
+    
+    // If already tripped, stay blocked
+    if (ESD_circuit_breaker_tripped) return true;
+
+    // Calculate Today's Realized Loss
+    HistorySelect(iTime(_Symbol, PERIOD_D1, 0), TimeCurrent());
+    double daily_profit = 0;
+    
+    for (int i=0; i<HistoryDealsTotal(); i++)
+    {
+        ulong ticket = HistoryDealGetTicket(i);
+        if (HistoryDealGetInteger(ticket, DEAL_ENTRY) == DEAL_ENTRY_OUT && 
+            HistoryDealGetInteger(ticket, DEAL_MAGIC) == ESD_MagicNumber)
+        {
+            daily_profit += HistoryDealGetDouble(ticket, DEAL_PROFIT);
+        }
+    }
+    
+    // Check Limit (Def: 5% of Balance)
+    double max_loss = AccountInfoDouble(ACCOUNT_BALANCE) * 0.05; // 5% Hard Stop
+    
+    if (daily_profit < -max_loss)
+    {
+        ESD_circuit_breaker_tripped = true;
+        Print("🚨 CIRCUIT BREAKER TRIPPED! Daily Loss exceeded ", DoubleToString(max_loss, 2), ". System HALTED.");
+        return true; // STOP TRADING
+    }
+    
     return false;
 }
