@@ -1,0 +1,5 @@
+# MQL5
+*.ex5
+*.mqproj
+MQL5Logs/
+Tester/
