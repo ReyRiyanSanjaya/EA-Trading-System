@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESD Trading System - Architecture</title>
+    <style>
+        :root {
+            --bg-color: #0d0e12;
+            --card-bg: rgba(23, 25, 35, 0.7);
+            --accent-primary: #6366f1; /* Indigo */
+            --accent-secondary: #ec4899; /* Pink */
+            --accent-success: #10b981; /* Emerald */
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            overflow: hidden; /* For full screen app feel */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Ambient Background */
+        .ambient-light {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
+            animation: pulse-bg 10s infinite alternate;
+        }
+
+        @keyframes pulse-bg {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+            z-index: 10;
+        }
+
+        /* Flow Chart Container */
+        .flow-container {
+            position: relative;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            z-index: 5;
+            perspective: 1000px;
+        }
+
+        /* Cards */
+        .node {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 200px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .node:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);
+            border-color: var(--accent-primary);
+        }
+
+        .node h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.2rem;
+            color: var(--accent-primary);
+        }
+
+        .node p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Connecting Lines (Animated) */
+        .connector {
+            flex-grow: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            min-width: 50px;
+        }
+
+        .connector::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--accent-success), transparent);
+            transform: translateX(-100%);
+            animation: flow 2s infinite linear;
+        }
+
+        @keyframes flow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Specific Status Indicators */
+        .status-dot {
+            height: 8px;
+            width: 8px;
+            background-color: var(--accent-success);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            box-shadow: 0 0 10px var(--accent-success);
+        }
+
+        /* 3D Elements */
+        .orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) rotateX(60deg);
+            z-index: -1;
+            animation: spin 20s linear infinite;
+        }
+
+        .planet {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--accent-secondary);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg); }
+            100% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="ambient-light"></div>
+    <div class="orbit"><div class="planet"></div></div>
+
+    <h1>ESD Trading System v2.1</h1>
+
+    <div class="flow-container">
+        
+        <!-- STEP 1 -->
+        <div class="node">
+            <h3>1. Data Input</h3>
+            <p>Tick Data<br>News (Forex Factory)</p>
+            <div style="margin-top:10px; font-size:0.8rem; color:#fff;">
+                <span class="status-dot"></span>Active
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- STEP 2 -->
+        <div class="node">
+            <h3>2. Filters</h3>
+            <p>News Filter<br>Market Regime<br>Spread Check</p>
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- STEP 3 -->
+        <div class="node" style="border-color: var(--accent-secondary);">
+            <h3>3. Strategy Engine</h3>
+            <p>SMC Structure<br>Dragon (Scalping)<br>ML Confidence</p>
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- STEP 4 -->
+        <div class="node">
+            <h3>4. Execution</h3>
+            <p>Dynamic SL/TP<br>Lot Sizing<br>Order Send</p>
+        </div>
+
+    </div>
+
+    <div style="margin-top: 3rem; text-align: center; color: var(--text-secondary); max-width: 600px; z-index: 10;">
+        <p>Interactive Visualization of the ESD logic flow. <br>The system processes ticks in real-time, filters noise, applies AI/SMC logic, and executes precision trades.</p>
+    </div>
+
+    <script>
+        // Simple interactivity for cards
+        const nodes = document.querySelectorAll('.node');
+        nodes.forEach(node => {
+            node.addEventListener('mouseover', () => {
+                node.style.borderColor = '#fff';
+            });
+            node.addEventListener('mouseout', () => {
+                node.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            });
+        });
+    </script>
+</body>
+</html>

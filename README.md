@@ -6,11 +6,15 @@
 </p>
 
 <h1 align="center">
-  🐉 ESD Trading System
+  🐲 ESD Trading System v2.1
 </h1>
 
 <p align="center">
-  <strong>Expert Advisor berbasis Smart Money Concepts dengan Machine Learning & News Filter</strong>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=10,20,40&height=120&section=header&text=ESD%20TRADING%20SYSTEM&fontSize=40&fontColor=ffffff&fontAlign=50&animation=fadeIn" alt="Header">
+</p>
+
+<p align="center">
+  <strong>🚀 Next-Gen Expert Advisor: SMC • Machine Learning • Dragon Momentum</strong>
 </p>
 
 <p align="center">
@@ -83,7 +87,22 @@
 
 </td>
 </tr>
+### 🛡️ Advanced Confirmation
+- ✅ Stochastic Filter (No Buy in Overbought)
+- ✅ Candle Rejection Confirmation
+- ✅ Heatmap & Order Flow Analysis
+- ✅ Aggressive FVG Entry (Scalping)
+- ✅ Inducement Liquidity Logic
+
+</td>
+</tr>
 </table>
+
+<p align="center">
+  <a href="docs/visualization.html">
+    <img src="https://img.shields.io/badge/VIEW_LIVE_ARCHITECTURE-000000?style=for-the-badge&logo=html5&logoColor=white" alt="Live View">
+  </a>
+</p>
 
 ---
 
@@ -185,6 +204,7 @@ URL: https://nfs.faireconomy.media/ff_calendar_thisweek.json
                             ┌──────────┐  ┌──────────────────┐
                             │   SKIP   │  │ 💹 EXECUTE TRADE │
                             └──────────┘  │  - Entry Signal  │
+                            │  - Entry Signal  │
                                           │  - SL/TP Calc    │
                                           │  - Lot Sizing    │
                                           └──────────────────┘
@@ -291,7 +311,7 @@ Sistem ini menampilkan dashboard interaktif pada chart untuk monitoring real-tim
 │  ● Market Regime             │  ──────────────────────────   │
 │  ● Daily Bias                │  💰 ACCOUNT                   │
 │  ● Time Filter               │  Bal: $10,500 • Eq: $10,650   │
-│  ● Trend Alignment           │  Free: $9,800                 │
+│  ● Free: $9,800                 │
 │  ● Generic Order Flow        │  ──────────────────────────   │
 │  ○ Volatility                │  📍 POSITIONS                 │
 │                              │  Buy: 1 • Sell: 0 • Float: $150│
