@@ -279,28 +279,39 @@ Bearish BoS:
 Sistem ini menampilkan dashboard interaktif pada chart untuk monitoring real-time:
 
 ```
-┌──────────────────────────────────────┐
-│  🐲 ESD DRAGON MOMENTUM v2.1         │
-├──────────────────────────────────────┤
-│  Dragon Strategy: Active ✅          │
-│  Session: Sydney / Tokyo             │
-│  ATR Value: 0.0015                   │
-│                                      │
-│  [ ENTRY SIGNAL ]                    │
-│  Type: BUY 🟢                        │
-│  Price: 2030.50                      │
-│  SL: 2028.00 (ATR 1.5x)              │
-│  TP: 2035.00 (ATR 3.0x)              │
-└──────────────────────────────────────┘
-
-┌──────────────────────────────────────┐
-│  📊 FILTER MONITOR                   │
-├──────────────────────────────────────┤
-│  News Filter:   PASS ✅              │
-│  Regime:        TRENDING 📈          │
-│  ML Confidence: 85% ✅               │
-│  Spread:        12 pts ✅            │
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  ⚡ SMC TRADING DASHBOARD ⚡                                 │
+│  2025.12.17 14:30 • 45 Objects Active                        │
+│                                           ● PASS | 85% | 8/9 │
+├──────────────────────────────┬───────────────────────────────┤
+│ 🛡 FILTERS                   │ 📊 PERFORMANCE                │
+│                              │                               │
+│  ● Spread Check              │  Trades: 142 • Win: 68.5%     │
+│  ● News Filter               │  Expectancy: $12.50           │
+│  ● Market Regime             │  ──────────────────────────   │
+│  ● Daily Bias                │  💰 ACCOUNT                   │
+│  ● Time Filter               │  Bal: $10,500 • Eq: $10,650   │
+│  ● Trend Alignment           │  Free: $9,800                 │
+│  ● Generic Order Flow        │  ──────────────────────────   │
+│  ○ Volatility                │  📍 POSITIONS                 │
+│                              │  Buy: 1 • Sell: 0 • Float: $150│
+│                              │  Spread: 12 pts • Lot: 0.10   │
+│                              │                               │
+│                              │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│                              │                               │
+│                              │ 🤖 AI OPTIMIZATION            │
+│                              │                               │
+│                              │  Acc: 72.4% • Risk: 1.25      │
+│                              │  Vol: 0.85 • Lot: 1.1x        │
+│                              │  SL: 1.5x • TP: 2.0x          │
+│                              │                               │
+│                              │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│                              │                               │
+│                              │ 🐲 DRAGON V2                  │
+│                              │                               │
+│                              │  Status: Active ✅            │
+│                              │  Mode: ATR: 1.5x/3.0x         │
+└──────────────────────────────┴───────────────────────────────┘
 ```
 
 **Indikator Visual:**
