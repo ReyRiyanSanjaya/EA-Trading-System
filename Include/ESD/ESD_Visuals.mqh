@@ -949,6 +949,52 @@ void ESD_DrawUnifiedDashboard()
                                  StringFormat("TP: %.2fx", ESD_ml_optimal_tp_multiplier),
                                  PANEL_ACCENT_INFO, 8, "Consolas",
                                  right_x, right_y);
+                                 
+            right_y += 16;
+        }
+
+        // --- DRAGON STRATEGY SECTION (NEW) ---
+        if (DragonScale > 0)
+        {
+             if (show_trading || show_ml)
+             {
+                 AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                                      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", PANEL_DIVIDER, 8, "Consolas",
+                                      right_x, right_y);
+                 right_y += 16;
+             }
+
+             AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                                  "🐲 DRAGON V2", C'255,100,100', 10, "Arial Black",
+                                  right_x, right_y);
+
+             right_y += 20;
+
+             string timeStatus = "Active ✅";
+             if (Dragon_UseTimeFilter)
+             {
+                 MqlDateTime dt;
+                 TimeCurrent(dt);
+                 int h = dt.hour;
+                 bool active = false;
+                 if (Dragon_StartHour < Dragon_EndHour) { if (h >= Dragon_StartHour && h < Dragon_EndHour) active = true; }
+                 else { if (h >= Dragon_StartHour || h < Dragon_EndHour) active = true; }
+                 
+                 if (!active) timeStatus = "Sleeping 💤";
+             }
+
+             AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                                  StringFormat("Status: %s", timeStatus),
+                                  PANEL_TEXT_PRIMARY, 8, "Consolas",
+                                  right_x, right_y);
+
+             right_y += 16;
+
+             string atrStr = Dragon_UseATR ? StringFormat("ATR: %.1fx/%.1fx", Dragon_SL_ATR_Multiplier, Dragon_TP_ATR_Multiplier) : "Fixed Pts";
+             AddStyledLineWithPos(lines, colors, font_sizes, fonts, x_positions, y_positions, idx,
+                                  StringFormat("Mode: %s", atrStr),
+                                  PANEL_TEXT_MUTED, 8, "Consolas",
+                                  right_x, right_y);
         }
     }
 

@@ -130,12 +130,25 @@ input color ESD_AskVolumeColor = clrCrimson;    // Ask volume color
 
 //--- Dragon Strategy Inputs
 input double DragonScale = 0.03;
-input int FireBreath = 700;
-input int SkyReach = 1400;
 input double MinDragonPower = 0.0005;
 input double SoulEssence = 0.7;
 input int EMA_Period = 10;
 input double Max_Deviation_Pips = 20.0;
+
+//--- Dragon Enhanced Settings (Dynamic Stops & Time Filter)
+input group "=== Dragon Strategy Enhancements ==="
+input bool Dragon_UseATR = true;                 // Use ATR for Dynamic SL/TP
+input int Dragon_ATR_Period = 14;                // ATR Period
+input double Dragon_SL_ATR_Multiplier = 1.5;     // SL ATR Multiplier
+input double Dragon_TP_ATR_Multiplier = 3.0;     // TP ATR Multiplier
+
+input bool Dragon_UseTimeFilter = true;          // Enable Time Filter
+input int Dragon_StartHour = 22;                 // Start Hour (Server Time, e.g. Sydney Open)
+input int Dragon_EndHour = 10;                   // End Hour (Server Time, e.g. Early London)
+
+// Deprecated fixed inputs (kept for fallback)
+input int FireBreath = 700;                      // Fixed SL (Fallback)
+input int SkyReach = 1400;                       // Fixed TP (Fallback)
 
 //--- Machine Learning Settings
 input group "=== MACHINE LEARNING SETTINGS ==="

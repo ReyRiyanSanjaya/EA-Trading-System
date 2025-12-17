@@ -62,6 +62,18 @@
 </td>
 <td width="50%">
 
+### 🐉 Dragon Strategy (New v2.0)
+- ✅ Dynamic ATR-Based Stops
+- ✅ Time Filter (Sydney/Tokyo Sessions)
+- ✅ Momentum Candle Detection
+- ✅ EMA Deviation Logic
+- ✅ Auto-reversal on Max Loss
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
 ### 📊 Risk Management
 - ✅ Market Regime Detection
 - ✅ BSL/SSL Avoidance
@@ -259,6 +271,44 @@ Bearish BoS:
 | 🔥 Heatmap | Low |
 | 🏗️ Structure | High |
 | 🎯 Regime | Medium |
+
+---
+
+### 🎨 Visual Dashboard
+
+Sistem ini menampilkan dashboard interaktif pada chart untuk monitoring real-time:
+
+```
+┌──────────────────────────────────────┐
+│  🐲 ESD DRAGON MOMENTUM v2.1         │
+├──────────────────────────────────────┤
+│  Dragon Strategy: Active ✅          │
+│  Session: Sydney / Tokyo             │
+│  ATR Value: 0.0015                   │
+│                                      │
+│  [ ENTRY SIGNAL ]                    │
+│  Type: BUY 🟢                        │
+│  Price: 2030.50                      │
+│  SL: 2028.00 (ATR 1.5x)              │
+│  TP: 2035.00 (ATR 3.0x)              │
+└──────────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│  📊 FILTER MONITOR                   │
+├──────────────────────────────────────┤
+│  News Filter:   PASS ✅              │
+│  Regime:        TRENDING 📈          │
+│  ML Confidence: 85% ✅               │
+│  Spread:        12 pts ✅            │
+└──────────────────────────────────────┘
+```
+
+**Indikator Visual:**
+- 🟦 **Blue Rectangle**: Bullish Order Block (OB)
+- 🟥 **Red Rectangle**: Bearish Order Block (OB)
+- 🟩 **Green Shade**: Fair Value Gap (FVG)
+- 📉 **Trend Lines**: Break of Structure (BoS) & CHoCH
+- 🏷️ **Labels**: MSS, Swing High/Low, Liquidity Sweeps
 
 ---
 
