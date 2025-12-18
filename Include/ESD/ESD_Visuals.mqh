@@ -1520,3 +1520,112 @@ void ESD_DrawRegimeIndicator()
 }
 
 
+//+------------------------------------------------------------------+
+//|                    SESSION PANEL                                  |
+//+------------------------------------------------------------------+
+//| Displays current trading session info on chart                    |
+//+------------------------------------------------------------------+
+void ESD_DrawSessionPanel()
+{
+    string panel_name = "ESD_SessionPanel";
+    string text_name = "ESD_SessionText";
+    string status_name = "ESD_SessionStatus";
+    
+    // Get session info
+    string current_session = ESD_GetCurrentSession();
+    bool in_overlap = ESD_IsInOverlap();
+    bool in_major = ESD_IsInMajorSession();
+    
+    // Session colors
+    color session_color = clrGray;
+    color status_color = clrRed;
+    
+    if (current_session == "London-NY Overlap")
+    {
+        session_color = clrGold;
+        status_color = clrLime;
+    }
+    else if (current_session == "New York")
+    {
+        session_color = clrDodgerBlue;
+        status_color = clrLime;
+    }
+    else if (current_session == "London")
+    {
+        session_color = clrLimeGreen;
+        status_color = clrLime;
+    }
+    else if (current_session == "Tokyo")
+    {
+        session_color = clrOrange;
+        status_color = clrYellow;
+    }
+    else if (current_session == "Sydney")
+    {
+        session_color = clrMagenta;
+        status_color = clrYellow;
+    }
+    
+    // Create panel
+    if (ObjectFind(0, panel_name) < 0)
+    {
+        ObjectCreate(0, panel_name, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+        ObjectSetInteger(0, panel_name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+        ObjectSetInteger(0, panel_name, OBJPROP_XDISTANCE, 10);
+        ObjectSetInteger(0, panel_name, OBJPROP_YDISTANCE, 10);
+        ObjectSetInteger(0, panel_name, OBJPROP_XSIZE, 160);
+        ObjectSetInteger(0, panel_name, OBJPROP_YSIZE, 60);
+        ObjectSetInteger(0, panel_name, OBJPROP_BGCOLOR, C'25,30,40');
+        ObjectSetInteger(0, panel_name, OBJPROP_BORDER_TYPE, BORDER_FLAT);
+        ObjectSetInteger(0, panel_name, OBJPROP_BORDER_COLOR, session_color);
+        ObjectSetInteger(0, panel_name, OBJPROP_WIDTH, 2);
+        ObjectSetInteger(0, panel_name, OBJPROP_BACK, false);
+        ObjectSetInteger(0, panel_name, OBJPROP_SELECTABLE, false);
+    }
+    else
+    {
+        ObjectSetInteger(0, panel_name, OBJPROP_BORDER_COLOR, session_color);
+    }
+    
+    // Session name text
+    if (ObjectFind(0, text_name) < 0)
+    {
+        ObjectCreate(0, text_name, OBJ_LABEL, 0, 0, 0);
+        ObjectSetInteger(0, text_name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+        ObjectSetInteger(0, text_name, OBJPROP_XDISTANCE, 20);
+        ObjectSetInteger(0, text_name, OBJPROP_YDISTANCE, 18);
+        ObjectSetInteger(0, text_name, OBJPROP_FONTSIZE, 11);
+        ObjectSetString(0, text_name, OBJPROP_FONT, "Arial Bold");
+        ObjectSetInteger(0, text_name, OBJPROP_BACK, false);
+        ObjectSetInteger(0, text_name, OBJPROP_SELECTABLE, false);
+    }
+    
+    ObjectSetInteger(0, text_name, OBJPROP_COLOR, session_color);
+    ObjectSetString(0, text_name, OBJPROP_TEXT, "📍 " + current_session);
+    
+    // Status text
+    if (ObjectFind(0, status_name) < 0)
+    {
+        ObjectCreate(0, status_name, OBJ_LABEL, 0, 0, 0);
+        ObjectSetInteger(0, status_name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+        ObjectSetInteger(0, status_name, OBJPROP_XDISTANCE, 20);
+        ObjectSetInteger(0, status_name, OBJPROP_YDISTANCE, 42);
+        ObjectSetInteger(0, status_name, OBJPROP_FONTSIZE, 9);
+        ObjectSetString(0, status_name, OBJPROP_FONT, "Consolas");
+        ObjectSetInteger(0, status_name, OBJPROP_BACK, false);
+        ObjectSetInteger(0, status_name, OBJPROP_SELECTABLE, false);
+    }
+    
+    string status_text = "";
+    if (in_overlap)
+        status_text = "● OVERLAP (High Vol)";
+    else if (in_major)
+        status_text = "● Active Session";
+    else
+        status_text = "○ Low Volatility";
+    
+    ObjectSetInteger(0, status_name, OBJPROP_COLOR, status_color);
+    ObjectSetString(0, status_name, OBJPROP_TEXT, status_text);
+}
+
+// --- END OF FILE ---

@@ -360,4 +360,367 @@ double ESD_GetEMA(int period, int shift = 0)
     return 0;
 }
 
+//+------------------------------------------------------------------+
+//|                    MARKET SESSION UTILITIES                       |
+//+------------------------------------------------------------------+
+
+// Session definitions (Server Time GMT+2/GMT+3)
+#define SESSION_SYDNEY_START    22  // 22:00
+#define SESSION_SYDNEY_END      7   // 07:00
+#define SESSION_TOKYO_START     0   // 00:00
+#define SESSION_TOKYO_END       9   // 09:00
+#define SESSION_LONDON_START    8   // 08:00
+#define SESSION_LONDON_END      17  // 17:00
+#define SESSION_NEWYORK_START   13  // 13:00
+#define SESSION_NEWYORK_END     22  // 22:00
+
+//+------------------------------------------------------------------+
+//| Check if we are in Sydney Session                                |
+//+------------------------------------------------------------------+
+bool ESD_IsSydneySession()
+{
+    return ESD_IsWithinTradingHours(SESSION_SYDNEY_START, SESSION_SYDNEY_END);
+}
+
+//+------------------------------------------------------------------+
+//| Check if we are in Tokyo Session                                 |
+//+------------------------------------------------------------------+
+bool ESD_IsTokyoSession()
+{
+    return ESD_IsWithinTradingHours(SESSION_TOKYO_START, SESSION_TOKYO_END);
+}
+
+//+------------------------------------------------------------------+
+//| Check if we are in London Session                                |
+//+------------------------------------------------------------------+
+bool ESD_IsLondonSession()
+{
+    return ESD_IsWithinTradingHours(SESSION_LONDON_START, SESSION_LONDON_END);
+}
+
+//+------------------------------------------------------------------+
+//| Check if we are in New York Session                              |
+//+------------------------------------------------------------------+
+bool ESD_IsNewYorkSession()
+{
+    return ESD_IsWithinTradingHours(SESSION_NEWYORK_START, SESSION_NEWYORK_END);
+}
+
+//+------------------------------------------------------------------+
+//| Get current session name                                         |
+//+------------------------------------------------------------------+
+string ESD_GetCurrentSession()
+{
+    if (ESD_IsLondonSession() && ESD_IsNewYorkSession())
+        return "London-NY Overlap";
+    else if (ESD_IsNewYorkSession())
+        return "New York";
+    else if (ESD_IsLondonSession())
+        return "London";
+    else if (ESD_IsTokyoSession())
+        return "Tokyo";
+    else if (ESD_IsSydneySession())
+        return "Sydney";
+    else
+        return "Off-Hours";
+}
+
+//+------------------------------------------------------------------+
+//| Check if we are in major session (London or NY)                  |
+//+------------------------------------------------------------------+
+bool ESD_IsInMajorSession()
+{
+    return ESD_IsLondonSession() || ESD_IsNewYorkSession();
+}
+
+//+------------------------------------------------------------------+
+//| Check if we are in London-NY overlap (highest volatility)        |
+//+------------------------------------------------------------------+
+bool ESD_IsInOverlap()
+{
+    return ESD_IsLondonSession() && ESD_IsNewYorkSession();
+}
+
+//+------------------------------------------------------------------+
+//|                    POSITION MANAGEMENT UTILITIES                  |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Count active positions for current symbol                        |
+//+------------------------------------------------------------------+
+int ESD_CountPositions(ulong magic = 0)
+{
+    int count = 0;
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (PositionSelectByTicket(PositionGetTicket(i)))
+        {
+            if (PositionGetString(POSITION_SYMBOL) == _Symbol)
+            {
+                if (magic == 0 || PositionGetInteger(POSITION_MAGIC) == magic)
+                    count++;
+            }
+        }
+    }
+    return count;
+}
+
+//+------------------------------------------------------------------+
+//| Count Buy positions                                              |
+//+------------------------------------------------------------------+
+int ESD_CountBuyPositions(ulong magic = 0)
+{
+    int count = 0;
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (PositionSelectByTicket(PositionGetTicket(i)))
+        {
+            if (PositionGetString(POSITION_SYMBOL) == _Symbol &&
+                PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
+            {
+                if (magic == 0 || PositionGetInteger(POSITION_MAGIC) == magic)
+                    count++;
+            }
+        }
+    }
+    return count;
+}
+
+//+------------------------------------------------------------------+
+//| Count Sell positions                                             |
+//+------------------------------------------------------------------+
+int ESD_CountSellPositions(ulong magic = 0)
+{
+    int count = 0;
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (PositionSelectByTicket(PositionGetTicket(i)))
+        {
+            if (PositionGetString(POSITION_SYMBOL) == _Symbol &&
+                PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL)
+            {
+                if (magic == 0 || PositionGetInteger(POSITION_MAGIC) == magic)
+                    count++;
+            }
+        }
+    }
+    return count;
+}
+
+//+------------------------------------------------------------------+
+//| Get total floating profit for symbol                             |
+//+------------------------------------------------------------------+
+double ESD_GetTotalProfit(ulong magic = 0)
+{
+    double total = 0;
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (PositionSelectByTicket(PositionGetTicket(i)))
+        {
+            if (PositionGetString(POSITION_SYMBOL) == _Symbol)
+            {
+                if (magic == 0 || PositionGetInteger(POSITION_MAGIC) == magic)
+                    total += PositionGetDouble(POSITION_PROFIT);
+            }
+        }
+    }
+    return total;
+}
+
+//+------------------------------------------------------------------+
+//|                    BREAKEVEN UTILITIES                            |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Move position to breakeven                                       |
+//| Params:                                                          |
+//|   ticket - Position ticket                                       |
+//|   buffer_points - Points above/below entry for safety            |
+//+------------------------------------------------------------------+
+bool ESD_MoveToBreakeven(ulong ticket, int buffer_points = 10)
+{
+    if (!PositionSelectByTicket(ticket))
+        return false;
+    
+    double entry = PositionGetDouble(POSITION_PRICE_OPEN);
+    double current_sl = PositionGetDouble(POSITION_SL);
+    double tp = PositionGetDouble(POSITION_TP);
+    double point = ESD_GetPoint();
+    long pos_type = PositionGetInteger(POSITION_TYPE);
+    
+    double new_sl = 0;
+    
+    if (pos_type == POSITION_TYPE_BUY)
+    {
+        new_sl = entry + buffer_points * point;
+        // Only move if new SL is above current SL
+        if (new_sl <= current_sl && current_sl > 0)
+            return false;
+    }
+    else if (pos_type == POSITION_TYPE_SELL)
+    {
+        new_sl = entry - buffer_points * point;
+        // Only move if new SL is below current SL
+        if (new_sl >= current_sl && current_sl > 0)
+            return false;
+    }
+    
+    new_sl = ESD_NormalizePrice(new_sl);
+    
+    MqlTradeRequest request;
+    MqlTradeResult result;
+    ZeroMemory(request);
+    ZeroMemory(result);
+    
+    request.action = TRADE_ACTION_SLTP;
+    request.position = ticket;
+    request.symbol = _Symbol;
+    request.sl = new_sl;
+    request.tp = tp;
+    
+    if (OrderSend(request, result))
+    {
+        if (result.retcode == TRADE_RETCODE_DONE)
+        {
+            ESD_Log(StringFormat("Moved to breakeven: Ticket %d, SL: %.5f", ticket, new_sl), ESD_LOG_INFO);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+//+------------------------------------------------------------------+
+//| Auto-manage breakeven for all positions                          |
+//| Move SL to breakeven when profit reaches activation_points       |
+//+------------------------------------------------------------------+
+void ESD_AutoBreakeven(int activation_points, int buffer_points = 10, ulong magic = 0)
+{
+    double point = ESD_GetPoint();
+    
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = PositionGetTicket(i);
+        if (!PositionSelectByTicket(ticket))
+            continue;
+        
+        if (PositionGetString(POSITION_SYMBOL) != _Symbol)
+            continue;
+        
+        if (magic > 0 && PositionGetInteger(POSITION_MAGIC) != magic)
+            continue;
+        
+        double entry = PositionGetDouble(POSITION_PRICE_OPEN);
+        double current_sl = PositionGetDouble(POSITION_SL);
+        long pos_type = PositionGetInteger(POSITION_TYPE);
+        double current_price = 0;
+        double profit_points = 0;
+        
+        if (pos_type == POSITION_TYPE_BUY)
+        {
+            current_price = ESD_GetBid();
+            profit_points = (current_price - entry) / point;
+            
+            // Check if already at breakeven
+            if (current_sl >= entry)
+                continue;
+        }
+        else if (pos_type == POSITION_TYPE_SELL)
+        {
+            current_price = ESD_GetAsk();
+            profit_points = (entry - current_price) / point;
+            
+            // Check if already at breakeven
+            if (current_sl <= entry && current_sl > 0)
+                continue;
+        }
+        
+        // Move to breakeven if activation threshold reached
+        if (profit_points >= activation_points)
+        {
+            ESD_MoveToBreakeven(ticket, buffer_points);
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//|                    RISK CALCULATION UTILITIES                     |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                      |
+//+------------------------------------------------------------------+
+double ESD_CalculateLotSize(double risk_percent, int sl_points)
+{
+    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    double risk_amount = balance * (risk_percent / 100.0);
+    
+    double tick_value = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+    double tick_size = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+    double point = ESD_GetPoint();
+    
+    if (tick_size == 0 || tick_value == 0)
+        return 0.01;
+    
+    double point_value = tick_value * (point / tick_size);
+    double sl_value = sl_points * point_value;
+    
+    if (sl_value == 0)
+        return 0.01;
+    
+    double lot = risk_amount / sl_value;
+    
+    // Normalize to broker limits
+    double min_lot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+    double max_lot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+    double lot_step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+    
+    lot = MathMax(lot, min_lot);
+    lot = MathMin(lot, max_lot);
+    lot = MathFloor(lot / lot_step) * lot_step;
+    
+    return lot;
+}
+
+//+------------------------------------------------------------------+
+//| Get daily profit/loss in currency                                |
+//+------------------------------------------------------------------+
+double ESD_GetDailyProfitLoss()
+{
+    double daily_pnl = 0;
+    datetime today_start = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
+    
+    // Check history
+    HistorySelect(today_start, TimeCurrent());
+    
+    for (int i = HistoryDealsTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = HistoryDealGetTicket(i);
+        if (HistoryDealGetString(ticket, DEAL_SYMBOL) == _Symbol)
+        {
+            daily_pnl += HistoryDealGetDouble(ticket, DEAL_PROFIT);
+            daily_pnl += HistoryDealGetDouble(ticket, DEAL_SWAP);
+            daily_pnl += HistoryDealGetDouble(ticket, DEAL_COMMISSION);
+        }
+    }
+    
+    // Add floating profit
+    daily_pnl += ESD_GetTotalProfit();
+    
+    return daily_pnl;
+}
+
+//+------------------------------------------------------------------+
+//| Check if daily loss limit is reached                             |
+//+------------------------------------------------------------------+
+bool ESD_IsDailyLossLimitReached(double max_loss_percent)
+{
+    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    double max_loss = balance * (max_loss_percent / 100.0);
+    double daily_pnl = ESD_GetDailyProfitLoss();
+    
+    return (daily_pnl < -max_loss);
+}
+
 // --- END OF FILE ---
+

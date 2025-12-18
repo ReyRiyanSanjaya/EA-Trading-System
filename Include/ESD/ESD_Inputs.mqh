@@ -197,3 +197,51 @@ input int ESD_BSL_SSL_BufferPoints = 50;          // Buffer from BSL/SSL levels 
 input bool ESD_ShowBSL_SSL = true;                // Show BSL/SSL levels on chart
 input color ESD_BSL_Color = clrDodgerBlue;        // BSL level color
 input color ESD_SSL_Color = clrCrimson;           // SSL level color
+
+//--- Session Filter Settings
+input group "=== SESSION FILTER SETTINGS ==="
+input bool ESD_UseSessionFilter = true;              // Enable Session Filter
+input bool ESD_TradeOnlyMajorSessions = true;        // Trade only London/NY
+input bool ESD_TradeOnOverlapOnly = false;           // Trade only London-NY overlap
+input bool ESD_TradeSydney = false;                  // Allow trading Sydney session
+input bool ESD_TradeTokyo = true;                    // Allow trading Tokyo session
+input bool ESD_TradeLondon = true;                   // Allow trading London session
+input bool ESD_TradeNewYork = true;                  // Allow trading New York session
+
+//--- Breakeven Settings
+input group "=== BREAKEVEN SETTINGS ==="
+input bool ESD_UseAutoBreakeven = true;              // Enable Auto Breakeven
+input int ESD_BreakevenActivation = 500;             // Points profit to activate BE
+input int ESD_BreakevenBuffer = 10;                  // Buffer points above entry
+
+//--- Trailing Stop Settings
+input group "=== TRAILING STOP SETTINGS ==="
+input bool ESD_UseStructureTrailing = true;          // Enable Structure-Based Trailing
+input ENUM_ESD_TRAILING_TYPE ESD_TrailingType = TRAIL_STRUCTURE; // Trailing method
+input int ESD_TrailingActivation = 1000;             // Points to activate trailing
+input double ESD_TrailingBufferRatio = 1.2;          // Buffer ratio for trailing SL
+
+//--- Advanced Strategy Settings
+input group "=== ADVANCED STRATEGIES ==="
+input bool ESD_EnableRSIDivergence = true;           // Enable RSI Divergence Strategy
+input bool ESD_EnableSupplyDemand = true;            // Enable Supply/Demand Zones
+input bool ESD_EnableSessionMomentum = true;         // Session momentum strategy
+input int ESD_RSIPeriod = 14;                        // RSI Period
+input int ESD_RSIOverbought = 70;                    // RSI Overbought level
+input int ESD_RSIOversold = 30;                      // RSI Oversold level
+input int ESD_SDZoneLookback = 50;                   // Supply/Demand zone lookback
+
+//--- Partial TP Settings (Enhanced)
+input group "=== PARTIAL TP SETTINGS ==="
+input double ESD_PartialTPRatio1 = 0.30;             // % to close at TP1
+input double ESD_PartialTPRatio2 = 0.30;             // % to close at TP2
+input double ESD_PartialTPRatio3 = 0.40;             // % to close at TP3
+input double ESD_PartialTPDistance2 = 2000;          // Distance for TP2
+input bool ESD_UseAdaptiveTP = true;                 // Use adaptive TP based on ATR
+input double ESD_HeatmapStrengthThreshold = 50.0;    // Heatmap strength threshold
+
+//--- Short Trading Settings
+input bool ESD_EnableShortTrading = true;            // Enable short trading strategies
+
+// --- END OF INPUT PARAMETERS ---
+

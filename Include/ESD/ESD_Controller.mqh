@@ -41,6 +41,7 @@
 #include "ESD_Entry.mqh"
 #include "ESD_Dragon.mqh"
 #include "ESD_Confirmation.mqh"
+#include "ESD_Strategies.mqh"
 
 //+------------------------------------------------------------------+
 //|                    CONTROLLER STATE                               |
@@ -217,12 +218,24 @@ void ESD_Controller_OnTick()
     // ═══════════════════════════════════════════════════════════════
     ESD_RiskManager_Protect();
     
+    // Auto-Breakeven Management
+    if (ESD_UseAutoBreakeven)
+    {
+        ESD_AutoBreakeven(ESD_BreakevenActivation, ESD_BreakevenBuffer, ESD_MagicNumber);
+    }
+    
     // ═══════════════════════════════════════════════════════════════
-    // PHASE 2: NEWS FILTER CHECK
+    // PHASE 2: SESSION & NEWS FILTER CHECK
     // ═══════════════════════════════════════════════════════════════
+    if (!ESD_SessionManager_CanTrade())
+    {
+        ESD_AnalysisManager_Update();
+        return;
+    }
+    
     if (!ESD_NewsManager_CanTrade())
     {
-        ESD_AnalysisManager_Update(); // Still update for visuals
+        ESD_AnalysisManager_Update();
         return;
     }
     
@@ -272,6 +285,48 @@ void ESD_RiskManager_Protect()
 }
 
 //+------------------------------------------------------------------+
+//| Session Manager - Can Trade Check                                |
+//+------------------------------------------------------------------+
+bool ESD_SessionManager_CanTrade()
+{
+    if (!ESD_UseSessionFilter)
+        return true;
+    
+    // Check overlap-only mode
+    if (ESD_TradeOnOverlapOnly)
+    {
+        bool in_overlap = ESD_IsInOverlap();
+        if (!in_overlap)
+            return false;
+        return true;
+    }
+    
+    // Check major sessions only mode
+    if (ESD_TradeOnlyMajorSessions)
+    {
+        if (!ESD_IsInMajorSession())
+            return false;
+    }
+    
+    // Check individual session permissions
+    if (ESD_IsSydneySession() && !ESD_TradeSydney)
+        return false;
+    if (ESD_IsTokyoSession() && !ESD_TradeTokyo)
+        return false;
+    if (ESD_IsLondonSession() && !ESD_TradeLondon)
+        return false;
+    if (ESD_IsNewYorkSession() && !ESD_TradeNewYork)
+        return false;
+    
+    // No session active and filter is on - block trading
+    string current = ESD_GetCurrentSession();
+    if (current == "Off-Hours")
+        return false;
+    
+    return true;
+}
+
+//+------------------------------------------------------------------+
 //| News Manager - Can Trade Check                                   |
 //+------------------------------------------------------------------+
 bool ESD_NewsManager_CanTrade()
@@ -301,6 +356,9 @@ void ESD_AnalysisManager_Update()
     
     // SMC Structures
     ESD_SMCManager_Update();
+    
+    // Session Panel Update
+    ESD_DrawSessionPanel();
     
     // Trend Analysis
     ESD_DetectSupremeTimeframeTrend();
@@ -359,6 +417,9 @@ void ESD_TradeManager_CheckEntries()
     
     // Aggressive Entries
     ESD_CheckForAggressiveEntry();
+    
+    // Advanced Strategies (RSI Divergence, S/D Zones, Session Momentum)
+    ESD_RunAllStrategies();
 }
 
 //+------------------------------------------------------------------+
