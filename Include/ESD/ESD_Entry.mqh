@@ -557,4 +557,200 @@ bool ESD_IsBullishInducementSignal() { return false; }
 bool ESD_IsBearishInducementSignal() { return false; }
 bool ESD_HasLowerTFConfirmation(bool is_buy) { return true; }
 
+//+------------------------------------------------------------------+
+//| ML Stochastic Entry Strategy                                     |
+//| Features:                                                        |
+//|   - Multi-timeframe Stochastic confirmation (Current + M1)       |
+//|   - ML confidence scoring                                        |
+//|   - Position limit (max 5 per symbol)                            |
+//|   - Adaptive SL/TP with ML multipliers                          |
+//+------------------------------------------------------------------+
+void ESD_TryOpenMLStochasticTrade()
+{
+    // --- 1. Batasi maksimal 5 posisi aktif ---
+    int active_positions = 0;
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (PositionSelectByTicket(PositionGetTicket(i)))
+        {
+            string sym = PositionGetString(POSITION_SYMBOL);
+            if (sym == _Symbol)
+                active_positions++;
+        }
+    }
+
+    if (active_positions >= 5)
+    {
+        Print("⚠️ Batas maksimal posisi (5) tercapai untuk ", _Symbol);
+        return;
+    }
+
+    // --- 2. Parameter Stochastic ---
+    int Kperiod = 14;
+    int Dperiod = 3;
+    int slowing = 3;
+    double overbought = 90.0;
+    double oversold = 10.0;
+
+    double K[], D[];
+    int handle = iStochastic(_Symbol, PERIOD_CURRENT, Kperiod, Dperiod, slowing, MODE_SMA, STO_LOWHIGH);
+    if (handle == INVALID_HANDLE)
+        return;
+
+    if (CopyBuffer(handle, 0, 0, 2, K) != 2 || CopyBuffer(handle, 1, 0, 2, D) != 2)
+        return;
+
+    double K_prev = K[1], D_prev = D[1];
+    double K_cur = K[0], D_cur = D[0];
+
+    // --- 2a. Ambil data Stochastic M1 untuk konfirmasi ---
+    double K_M1[], D_M1[];
+    int handle_M1 = iStochastic(_Symbol, PERIOD_M1, Kperiod, Dperiod, slowing, MODE_SMA, STO_LOWHIGH);
+    bool m1_confirm = false;
+
+    if (handle_M1 != INVALID_HANDLE)
+    {
+        if (CopyBuffer(handle_M1, 0, 0, 1, K_M1) == 1 && CopyBuffer(handle_M1, 1, 0, 1, D_M1) == 1)
+        {
+            double K_m1 = K_M1[0], D_m1 = D_M1[0];
+
+            // Konfirmasi M1: harus dalam kondisi overbought/oversold yang sama
+            if ((K_cur > overbought && D_cur > overbought && K_m1 > overbought && D_m1 > overbought) ||
+                (K_cur < oversold && D_cur < oversold && K_m1 < oversold && D_m1 < oversold))
+            {
+                m1_confirm = true;
+                Print("✅ Konfirmasi M1: Stochastic searah dengan timeframe current");
+            }
+        }
+        IndicatorRelease(handle_M1);
+    }
+
+    bool is_buy_signal = false, is_sell_signal = false;
+
+    // Deteksi sinyal dengan konfirmasi M1
+    if (K_cur < oversold && D_cur < oversold && K_prev < D_prev && K_cur > D_cur)
+    {
+        if (m1_confirm)
+            is_buy_signal = true;
+        else
+            Print("ℹ️ Sinyal BUY tapi tanpa konfirmasi M1");
+    }
+    else if (K_cur > overbought && D_cur > overbought && K_prev > D_prev && K_cur < D_cur)
+    {
+        if (m1_confirm)
+            is_sell_signal = true;
+        else
+            Print("ℹ️ Sinyal SELL tapi tanpa konfirmasi M1");
+    }
+
+    if (!is_buy_signal && !is_sell_signal)
+        return; // Tidak ada sinyal
+
+    // --- 3. Kumpulkan fitur ML ---
+    ESD_ML_Features features = ESD_CollectMLFeatures();
+    if (ESD_UseMachineLearning)
+        ESD_UpdateMLWeights(features);
+
+    // --- 4. Hitung confidence ML ---
+    double ml_confidence = 0.0;
+    if (ESD_UseMachineLearning)
+    {
+        ml_confidence += features.trend_strength * ESD_ml_trend_weight;
+        ml_confidence += (1.0 - features.volatility) * ESD_ml_volatility_weight;
+        ml_confidence += (MathAbs(features.momentum - 0.5) * 2.0) * ESD_ml_momentum_weight;
+        ml_confidence += features.risk_sentiment * ESD_ml_risk_appetite;
+        ml_confidence += features.structure_quality * 0.3;
+        ml_confidence += features.heatmap_strength * 0.2;
+        ml_confidence += features.orderflow_strength * 0.2;
+
+        double sentiment = MathMax(features.risk_sentiment, 0.5);
+        ml_confidence *= sentiment;
+        ml_confidence = MathMin(MathMax(ml_confidence + 0.2, 0.0), 2.0);
+    }
+    else
+    {
+        ml_confidence = 1.0; // Tanpa ML, gunakan confidence netral
+    }
+
+    // Ambang batas eksekusi
+    const double CONFIDENCE_THRESHOLD = 0.6;
+    if (ml_confidence < CONFIDENCE_THRESHOLD)
+        return;
+
+    // --- 5. Tentukan arah & lot ---
+    bool is_buy = is_buy_signal;
+    double lot = 0.1;
+
+    // --- 6. Hitung SL & TP (dengan TP lebih optimal) ---
+    double sl = 0, tp = 0;
+    double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+    int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+
+    // Tentukan pip yang benar untuk XAUUSD dan simbol lain
+    double pip = (digits == 3 || digits == 5) ? point * 10 : point;
+
+    // Minimal jarak stop level broker
+    double minStopLevel = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * point;
+
+    // Faktor multiplier untuk TP yang lebih jauh
+    double tp_multiplier = 3.5; 
+    double base_tp_points = ESD_TakeProfitPoints;
+
+    // Harga dasar untuk buy / sell
+    double price = is_buy ? SymbolInfoDouble(_Symbol, SYMBOL_ASK)
+                          : SymbolInfoDouble(_Symbol, SYMBOL_BID);
+
+    // Hitung jarak SL & TP
+    double sl_pts, tp_pts;
+    if (ESD_UseMachineLearning && ESD_ML_AdaptiveSLTP)
+    {
+        sl_pts = ESD_StopLossPoints * ESD_ml_optimal_sl_multiplier * pip;
+        tp_pts = base_tp_points * ESD_ml_optimal_tp_multiplier * tp_multiplier * pip;
+    }
+    else
+    {
+        sl_pts = ESD_StopLossPoints * pip;
+        tp_pts = base_tp_points * tp_multiplier * pip;
+    }
+
+    // Pastikan tidak lebih kecil dari minimal stop level brokernya
+    sl_pts = MathMax(sl_pts, minStopLevel);
+    tp_pts = MathMax(tp_pts, minStopLevel);
+
+    // Tetapkan SL & TP final
+    if (is_buy)
+    {
+        sl = price - sl_pts;
+        tp = price + tp_pts;
+    }
+    else
+    {
+        sl = price + sl_pts;
+        tp = price - tp_pts;
+    }
+
+    // --- 7. Eksekusi order ---
+    string comment = "ESD_Stochastic_ML";
+    bool result = false;
+
+    if (is_buy)
+    {
+        result = ESD_trade.Buy(lot, _Symbol, price, sl, tp, comment);
+        if (result)
+            Print("✅ BUY dibuka | Conf: ", DoubleToString(ml_confidence, 2),
+                  " | Lot: ", DoubleToString(lot, 2), " | TP Optimal: +", DoubleToString(tp_multiplier * 100, 0), "%");
+    }
+    else
+    {
+        result = ESD_trade.Sell(lot, _Symbol, price, sl, tp, comment);
+        if (result)
+            Print("✅ SELL dibuka | Conf: ", DoubleToString(ml_confidence, 2),
+                  " | Lot: ", DoubleToString(lot, 2), " | TP Optimal: +", DoubleToString(tp_multiplier * 100, 0), "%");
+    }
+
+    if (!result)
+        Print("❌ Gagal membuka order: ", GetLastError());
+}
+
 // --- END OF FILE ---
+

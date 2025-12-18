@@ -342,6 +342,9 @@ void ESD_TradeManager_CheckEntries()
     {
         ESD_CheckForEntryWithML();
         ESD_CheckMLAggressiveAlternativeEntries();
+        
+        // ML Stochastic Strategy (Multi-TF Confirmation)
+        ESD_TryOpenMLStochasticTrade();
     }
     else
     {
