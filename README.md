@@ -115,6 +115,110 @@
 
 ---
 
+## 🏗️ Framework Architecture
+
+ESD Trading System v2.2 menggunakan **Controller Architecture Pattern** untuk maintainability dan extensibility maksimal.
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            trade.mq5 (Entry Point)                          │
+│                       OnInit() → OnTick() → OnDeinit()                      │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         ESD_Controller.mqh                                  │
+│  ╔═══════════════════════════════════════════════════════════════════════╗  │
+│  ║                        SUBSYSTEM MANAGERS                             ║  │
+│  ║  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌─────────┐ ║  │
+│  ║  │  ML_Mgr   │ │  SMC_Mgr  │ │ Risk_Mgr  │ │ News_Mgr  │ │Trade_Mgr│ ║  │
+│  ║  │ • Virtual │ │ • BoS     │ │ • Circuit │ │ • Calendar│ │ • Entry │ ║  │
+│  ║  │ • Q-Learn │ │ • CHoCH   │ │ • MaxLoss │ │ • Filter  │ │ • Exit  │ ║  │
+│  ║  │ • Dual AI │ │ • FVG/OB  │ │ • Regime  │ │ • Buffer  │ │ • Aggr. │ ║  │
+│  ║  └───────────┘ └───────────┘ └───────────┘ └───────────┘ └─────────┘ ║  │
+│  ╚═══════════════════════════════════════════════════════════════════════╝  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         ▼                           ▼                           ▼
+┌─────────────────────┐   ┌─────────────────────┐   ┌─────────────────────┐
+│   LAYER 1:          │   │   LAYER 2:          │   │   LAYER 3:          │
+│   FOUNDATION        │   │   ANALYSIS          │   │   EXECUTION         │
+├─────────────────────┤   ├─────────────────────┤   ├─────────────────────┤
+│ ESD_Types.mqh       │   │ ESD_Trend.mqh       │   │ ESD_Entry.mqh       │
+│ ESD_Inputs.mqh      │   │ ESD_SMC.mqh         │   │ ESD_Execution.mqh   │
+│ ESD_Globals.mqh     │   │ ESD_ML.mqh          │   │ ESD_Dragon.mqh      │
+│ ESD_Utils.mqh       │   │ ESD_Risk.mqh        │   │ ESD_Confirmation.mqh│
+│ ESD_Visuals.mqh     │   │ ESD_Core.mqh        │   │                     │
+│                     │   │ ESD_News.mqh        │   │                     │
+└─────────────────────┘   └─────────────────────┘   └─────────────────────┘
+```
+
+### Module Responsibilities
+
+| Module | Layer | Responsibility |
+|--------|-------|----------------|
+| `ESD_Controller` | Central | Koordinasi semua subsystem, lifecycle management |
+| `ESD_Utils` | Foundation | Utility functions (price, array, time, math, debug) |
+| `ESD_Types` | Foundation | Type definitions dan structures |
+| `ESD_Inputs` | Foundation | User configurable parameters |
+| `ESD_Globals` | Foundation | Global state variables |
+| `ESD_ML` | Analysis | Machine Learning dengan Q-Lambda dan Dual Brain |
+| `ESD_SMC` | Analysis | Smart Money Concepts detection |
+| `ESD_Risk` | Analysis | Risk management dan regime detection |
+| `ESD_Entry` | Execution | Entry signal logic |
+| `ESD_Execution` | Execution | Trade execution dan partial TP |
+| `ESD_Confirmation` | Execution | Advanced confirmation filters |
+
+### Tick Flow Diagram
+
+```
+                          ┌──────────────────┐
+                          │   OnTick()       │
+                          └────────┬─────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │ PHASE 0: Virtual Learning    │
+                    │ (ML belajar dari setiap tick)│
+                    └──────────────┬───────────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │ PHASE 1: Position Protection │
+                    │ (MaxLoss, Trailing, Reversal)│
+                    └──────────────┬───────────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+              NO    │ PHASE 2: News Filter         │
+           ┌────────┤ (Blocking jika news aktif)   │
+           │        └──────────────┬───────────────┘
+           │                       │ YES
+           │                       ▼
+           │        ┌──────────────────────────────┐
+           │        │ PHASE 3: Update Analysis     │
+           │        │ • SMC Detection              │
+           │        │ • Trend Analysis             │
+           │        │ • Heatmap/OrderFlow          │
+           │        │ • ML Model Update            │
+           │        └──────────────┬───────────────┘
+           │                       │
+           │                       ▼
+           │        ┌──────────────────────────────┐
+           │        │ PHASE 4: Entry Logic         │
+           │        │ • ML Entry (if enabled)      │
+           │        │ • SMC Entry                  │
+           │        │ • Aggressive Entry           │
+           │        └──────────────────────────────┘
+           │
+           └──────────────► (Update visuals only)
+```
+
+---
+
 ## 🚀 Instalasi
 
 ### Persyaratan
@@ -522,6 +626,209 @@ Traditional Q-Learning:         Q-Lambda (Eligibility Traces):
    │ • Decay lambat: ε = ε × 0.995 per update                    │
    │ • Prevent stuck di strategi lama yang sudah tidak relevan   │
    └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 🛡️ Advanced Confirmation Logic
+
+Sistem ini menggunakan 5 layer konfirmasi lanjutan yang diimplementasikan di `ESD_Confirmation.mqh`:
+
+#### 1. 📊 Stochastic Filter (No Buy in Overbought)
+
+Filter ini mencegah entry di zona ekstrim oscillator:
+
+```
+              ┌──────────────────────────────────────────┐
+              │           STOCHASTIC FILTER              │
+              └──────────────────────────────────────────┘
+              
+      100 ─┬─────────────────────────────────────────────
+           │ ░░░░░░░░░░░░░░░░░░░░░░   OVERBOUGHT (>80)   
+       80 ─┼─────────────────────────────────────────────
+           │                                              
+           │       ╔══════════════════════╗               
+           │       ║  SAFE ZONE FOR BUY   ║               
+           │       ║    Stochastic K      ║               
+           │       ╚══════════════════════╝               
+       50 ─┼─────────────────────────────────────────────
+           │       ╔══════════════════════╗               
+           │       ║  SAFE ZONE FOR SELL  ║               
+           │       ╚══════════════════════╝               
+       20 ─┼─────────────────────────────────────────────
+           │ ░░░░░░░░░░░░░░░░░░░░░░   OVERSOLD (<20)     
+        0 ─┴─────────────────────────────────────────────
+                                                          
+      ┌───────────────────────────────────────────────────┐
+      │ LOGIKA:                                           │
+      │ • BUY  hanya jika K < 80 (tidak overbought)       │
+      │ • SELL hanya jika K > 20 (tidak oversold)         │
+      │ • Aggressive Mode: entry dari zona ekstrim        │
+      └───────────────────────────────────────────────────┘
+```
+
+---
+
+#### 2. 🕯️ Candle Rejection Confirmation
+
+Deteksi pola rejection dengan analisis wick-body ratio:
+
+```
+           BULLISH REJECTION           BEARISH REJECTION
+           ═══════════════             ═══════════════
+                                             
+                 ╭─╮                       ┃
+                 │ │ Body                  ┃ Upper Wick
+                 ╰─╯ (<30%)                ┃ (>60%)
+                  │                       ╭─╮
+                  │                       │ │ Body
+                  │ Lower Wick            ╰─╯ (<30%)
+                  │ (>60%)                 │
+                  │                        │
+                  ▼                            
+                                                
+      ┌──────────────────────────────────────────────────┐
+      │ FORMULA:                                         │
+      │                                                  │
+      │ body_ratio = body_size / total_range             │
+      │ wick_ratio = dominant_wick / total_range         │
+      │                                                  │
+      │ REJECTION = wick_ratio > 0.6 && body_ratio < 0.3 │
+      │ PIN BAR   = wick_ratio > 0.66 && body_ratio < 0.25│
+      └──────────────────────────────────────────────────┘
+```
+
+---
+
+#### 3. 📈 Heatmap & Order Flow Analysis
+
+Multi-timeframe momentum dan analisis delta volume:
+
+```
+     ┌───────────────────────────────────────────────────────┐
+     │              HEATMAP ANALYSIS                         │
+     └───────────────────────────────────────────────────────┘
+                                                              
+       M5 ────►  ┌────┐  ◄──── 20% weight                    
+                 │ +50│                                       
+       M15 ───►  ├────┤  ◄──── 30% weight                    
+                 │ +80│                                       
+       H1 ────►  ├────┤  ◄──── 30% weight    ──►  STRENGTH   
+                 │ +60│                           = +64%      
+       H4 ────►  └────┘  ◄──── 20% weight         (BULLISH)   
+                                                              
+     ┌───────────────────────────────────────────────────────┐
+     │              ORDER FLOW ANALYSIS                      │
+     └───────────────────────────────────────────────────────┘
+                                                              
+       +100 ──┬─ ▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃  BUY PRESSURE         
+              │  ████████████████████                         
+        +50 ──┼─ ████████████████████  DELTA POSITIVE         
+              │  ████████████████████                         
+          0 ──┼────────────────────────────────────           
+              │                                                
+        -50 ──┼─ ░░░░░░░░░░░░  DELTA NEGATIVE                 
+              │  ░░░░░░░░░░░░                                 
+       -100 ──┴─ ░░░░░░░░░░░░  SELL PRESSURE                  
+                                                              
+     ┌───────────────────────────────────────────────────────┐
+     │ FILTERS:                                              │
+     │ • Reject BUY jika heatmap < -50% (strong bearish)     │
+     │ • Reject SELL jika heatmap > +50% (strong bullish)    │
+     │ • Delta > threshold = confirm entry                   │
+     │ • ABSORPTION detected = caution mode                  │
+     └───────────────────────────────────────────────────────┘
+```
+
+---
+
+#### 4. ⚡ Aggressive FVG Entry (Scalping)
+
+Entry cepat saat FVG terdeteksi untuk strategi scalping:
+
+```
+     ┌───────────────────────────────────────────────────────┐
+     │           AGGRESSIVE FVG ENTRY FLOWCHART              │
+     └───────────────────────────────────────────────────────┘
+                                                               
+                      ┌─────────────────┐                      
+                      │   FVG DETECTED  │                      
+                      └────────┬────────┘                      
+                               │                               
+                      ┌────────▼────────┐                      
+                      │ AggressiveMode? │                      
+                      └────────┬────────┘                      
+                         YES   │   NO                          
+                    ┌──────────┴──────────┐                    
+                    │                     │                    
+           ┌────────▼────────┐   ┌────────▼────────┐           
+           │  TradeOnFVG?    │   │  WAIT FOR       │           
+           └────────┬────────┘   │  RETEST         │           
+              YES   │            └─────────────────┘           
+           ┌────────▼────────┐                                 
+           │  FVG < 60 sec?  │                                 
+           └────────┬────────┘                                 
+              YES   │                                          
+           ┌────────▼────────┐                                 
+           │  EXECUTE NOW!   │                                 
+           │  ⚡ SCALP ENTRY  │                                 
+           └─────────────────┘                                 
+                                                               
+     ┌───────────────────────────────────────────────────────┐
+     │ FVG QUALITY SCORING:                                  │
+     │                                                       │
+     │ Quality = Base(0.5) + Size(0.2) + Trend(0.15) + Fresh │
+     │                                                       │
+     │ • Size > ATR = +0.2                                   │
+     │ • Trend aligned = +0.15                               │
+     │ • Fresh < 5 min = +0.10                               │
+     └───────────────────────────────────────────────────────┘
+```
+
+---
+
+#### 5. 🎯 Inducement Liquidity Logic
+
+Trading berdasarkan false breakout di level liquidity:
+
+```
+     ┌───────────────────────────────────────────────────────┐
+     │           INDUCEMENT LIQUIDITY TRAP                   │
+     └───────────────────────────────────────────────────────┘
+                                                               
+                    BSL (Buy Side Liquidity)                   
+       ═══════════════════════════════════════                 
+                           ╱╲                                  
+                          ╱  ╲   ← FALSE BREAKOUT              
+                         ╱    ╲                                
+       ─────────────────╯      ╰─────────────────              
+                                     ↓                         
+                               SELL SIGNAL                     
+                               (Bearish Inducement)            
+                                                               
+       ─────────────────╮      ╭─────────────────              
+                         ╲    ╱                                
+                          ╲  ╱   ← FALSE BREAKDOWN             
+                           ╲╱                                  
+       ═══════════════════════════════════════                 
+                    SSL (Sell Side Liquidity)                  
+                                     ↓                         
+                               BUY SIGNAL                      
+                               (Bullish Inducement)            
+                                                               
+     ┌───────────────────────────────────────────────────────┐
+     │ KONDISI INDUCEMENT BULLISH:                           │
+     │ 1. Harga breakdown di bawah SSL                       │
+     │ 2. Candle close kembali di atas SSL                   │
+     │ 3. Rejection candle terkonfirmasi                     │
+     │ 4. → BUY SIGNAL (melawan inducement)                  │
+     ├───────────────────────────────────────────────────────┤
+     │ KONDISI INDUCEMENT BEARISH:                           │
+     │ 1. Harga breakout di atas BSL                         │
+     │ 2. Candle close kembali di bawah BSL                  │
+     │ 3. Rejection candle terkonfirmasi                     │
+     │ 4. → SELL SIGNAL (melawan inducement)                 │
+     └───────────────────────────────────────────────────────┘
 ```
 
 ---

@@ -30,6 +30,7 @@
 #include "ESD_Inputs.mqh"
 
 #include "ESD_Visuals.mqh"
+#include "ESD_Confirmation.mqh"
 void ESD_InitializeTradingData()
 {
     ESD_trade_data.total_trades = 0;
