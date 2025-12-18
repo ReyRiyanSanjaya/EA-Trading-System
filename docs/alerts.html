@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔔 Alert & Notification System - ESD Trading System</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Prism.js for Code Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+
+    <!-- Animate.css -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-purple: #a371f7;
+            --border-color: #30363d;
+            --gradient-1: linear-gradient(135deg, #FDBB2D 0%, #22C1C3 100%);
+            /* Yellow/Teal for Alerts */
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: var(--gradient-1);
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            color: #1a1a1a;
+            /* Darker text for contrast on yellow gradient */
+            font-weight: 500;
+            position: relative;
+        }
+
+        /* Feature Cards */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-yellow);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Parameter Tables */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .param-table th {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent-yellow);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .param-table td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .param-table tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .param-type {
+            color: var(--accent-purple);
+        }
+
+        .param-default {
+            color: var(--accent-green);
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-info {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+        }
+
+        .badge-pro {
+            background: rgba(163, 113, 247, 0.2);
+            color: var(--accent-purple);
+            border: 1px solid var(--accent-purple);
+        }
+
+        /* Sections */
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            opacity: 0;
+            /* Init hidden for animation */
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-number {
+            background: var(--gradient-1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #1a1a1a;
+            flex-shrink: 0;
+        }
+
+        /* Diagram */
+        .diagram {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            white-space: pre;
+            line-height: 1.4;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent-yellow);
+        }
+
+        /* Accordion */
+        .accordion {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .accordion-content {
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .accordion.active .accordion-content {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="nav-brand">🔔 ESD Alerts System</div>
+    </nav>
+
+    <div style="height: 80px;"></div>
+
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero animate__animated animate__fadeIn">
+            <h1>🔔 Real-Time Notification System</h1>
+            <p>Jangan Pernah Lewatkan Signal Momentum dengan Multi-Channel Alerts</p>
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <span class="badge badge-pro">✈️ Telegram</span>
+                <span class="badge badge-info">📱 Push Notif</span>
+                <span class="badge badge-pro">📧 Email</span>
+            </div>
+        </div>
+
+        <!-- Section 1: Telegram -->
+        <div class="section" id="telegram">
+            <div class="section-header">
+                <div class="section-number">1</div>
+                <h2>✈️ Telegram Integration</h2>
+            </div>
+
+            <p>Notifikasi instan ke Channel/Group Telegram Anda lengkap dengan detail entry, SL, TP, dan screenshot
+                chart.</p>
+
+            <div class="diagram">
+                ESD SYSTEM TELEGRAM BOT
+                ────────── ────────────
+                │ │
+                │ SIGNAL DETECTED! 🚨 │
+                │ • Pair: XAUUSD │
+                │ • Type: BUY │
+                │ • Price: 2045.50 │
+                │ • Reason: FVG + RSI Div │
+                │ │
+                │ Prepare Message JSON ───────►│ POST /sendMessage
+                │ Take Chart Screenshot ──────►│ POST /sendPhoto
+                │ │
+                ▼ ▼
+                📱 USER PHONE
+                "🔔 ESD SIGNAL: BUY XAUUSD"
+                [🖼️ Chart Image]
+            </div>
+
+            <h3 style="margin-top: 2rem;">📋 Configuration</h3>
+            <table class="param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>TelegramBotToken</code></td>
+                        <td>string</td>
+                        <td><code>123456:ABC-DEF...</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>TelegramChatID</code></td>
+                        <td>string</td>
+                        <td><code>-100123456789</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>SendScreenshots</code></td>
+                        <td>bool</td>
+                        <td><code>true</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 2: Push Notifications -->
+        <div class="section" id="push">
+            <div class="section-header">
+                <div class="section-number">2</div>
+                <h2>📱 Mobile Push Notifications</h2>
+            </div>
+
+            <p>Direct alert ke aplikasi MetaTrader 5 Mobile (iOS/Android) melalui MetaQuotes ID.</p>
+
+            <div class="code-block">
+                <pre><code class="language-cpp">// Logic flow
+if (NewSignal && ESD_UsePushNotify)
+{
+    string msg = "🐉 ESD DRAGON: " + _Symbol + " " + EnumToString(SignalType);
+    bool res = SendNotification(msg);
+    if (!res) Print("Failed to send push notification");
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Section 3: Email & Sound -->
+        <div class="section" id="email">
+            <div class="section-header">
+                <div class="section-number">3</div>
+                <h2>📧 Email & 🔊 Sound Alerts</h2>
+            </div>
+
+            <p>Metode notifikasi klasik untuk trader yang standby di depan PC atau membutuhkan log email.</p>
+
+            <table class="param-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Function</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Sound Alert</strong></td>
+                        <td><code>PlaySound("alert.wav")</code></td>
+                        <td>Perhatian instan saat scalping di PC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email Alert</strong></td>
+                        <td><code>SendMail(subject, body)</code></td>
+                        <td>Dokumentasi sinyal harian / Backup record</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Popup Alert</strong></td>
+                        <td><code>Alert(message)</code></td>
+                        <td>Notifikasi visual window di terminal MT5</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 3rem 0; color: var(--text-secondary);">
+            <p>ESD Trading System v2.2 • Built with 💙 for Traders</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                <a href="../README.md" style="color: var(--accent-blue); text-decoration: none;">← Back to README</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+
+    <script>
+        // Use IntersectionObserver for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            observer.observe(section);
+        });
+
+        function toggleAccordion(header) {
+            header.parentElement.classList.toggle('active');
+        }
+    </script>
+</body>
+
+</html>

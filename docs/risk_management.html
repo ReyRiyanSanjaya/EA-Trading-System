@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Risk Management System - ESD Trading System</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Prism.js for Code Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+
+    <!-- Animate.css -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-purple: #a371f7;
+            --border-color: #30363d;
+            --gradient-1: linear-gradient(135deg, #FF512F 0%, #DD2476 100%);
+            /* Red/Pink for Risk */
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: var(--gradient-1);
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+        }
+
+        /* Feature Cards */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-red);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+        }
+
+        .feature-card.blue::before {
+            background: var(--gradient-3);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .code-block pre {
+            margin: 0;
+        }
+
+        /* Parameter Tables */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .param-table th {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent-red);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .param-table td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .param-table tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .param-type {
+            color: var(--accent-purple);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .param-default {
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Sections */
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-number {
+            background: var(--gradient-1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Diagram Container */
+        .diagram {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            white-space: pre;
+            line-height: 1.4;
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .badge-danger {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent-red);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-red);
+        }
+
+        /* Accordion */
+        .accordion {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: var(--bg-tertiary);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: var(--bg-secondary);
+        }
+
+        .accordion-content {
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .accordion.active .accordion-content {
+            display: block;
+        }
+
+        .accordion-icon {
+            transition: transform 0.3s;
+        }
+
+        .accordion.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-brand">🛡️ ESD Risk Management</div>
+        <div class="nav-links">
+            <a href="#circuit-breaker">Circuit Breaker</a>
+            <a href="#regime">Market Regime</a>
+            <a href="#sizing">Position Sizing</a>
+            <a href="#partial">Smart Partial</a>
+            <a href="#trailing">Trailing Stop</a>
+        </div>
+    </nav>
+
+    <div style="height: 80px;"></div>
+
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero animate__animated animate__fadeIn">
+            <h1>📊 Risk Management System</h1>
+            <p>Perlindungan Modal Berlapis & Optimasi Profit</p>
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <span class="badge badge-danger">🛡️ Capital Protection</span>
+                <span class="badge badge-success">💰 Profit Maximization</span>
+                <span class="badge badge-danger">⚡ Auto-Cut Loss</span>
+            </div>
+        </div>
+
+        <!-- Quick Overview Cards -->
+        <div class="features-grid">
+            <div class="feature-card animate__animated animate__fadeInUp">
+                <div class="feature-icon">🔌</div>
+                <div class="feature-title">Circuit Breaker</div>
+                <div class="feature-desc">Kill Switch otomatis jika daily drawdown mencapai limit</div>
+                <span class="badge badge-danger">Critical</span>
+            </div>
+            <div class="feature-card blue animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
+                <div class="feature-icon">🌊</div>
+                <div class="feature-title">Market Regime</div>
+                <div class="feature-desc">Adaptasi strategi berdasarkan kondisi pasar (Trend/Range)</div>
+                <span class="badge badge-success">Adaptive</span>
+            </div>
+            <div class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
+                <div class="feature-icon">⚖️</div>
+                <div class="feature-title">Smart Position Sizing</div>
+                <div class="feature-desc">Kalkulasi lot otomatis berdasarkan % risk per trade</div>
+                <span class="badge badge-success">Auto-Calc</span>
+            </div>
+        </div>
+
+        <!-- Section 1: Circuit Breaker -->
+        <div class="section" id="circuit-breaker">
+            <div class="section-header">
+                <div class="section-number">1</div>
+                <h2>🔌 Hard Circuit Breaker (Kill Switch)</h2>
+            </div>
+
+            <p>Sistem keamanan level tertinggi yang akan menghentikan seluruh aktivitas trading jika batas kerugian
+                harian tercapai.</p>
+
+            <div class="diagram">
+                DAILY LOSS LIMIT (e.g. 5%)
+                ──────────────────────────
+                │
+                │ Current DD: 2% ... OK ✅
+                │ Current DD: 4% ... WARNING ⚠️
+                │ Current DD: 5.1% ... TRIGGERED 🚨
+                │
+                ▼
+                ┌──────────────────────────────┐
+                │ SYSTEM LOCKDOWN │
+                │ 1. Close All Positions │
+                │ 2. Cancel Pending Orders │
+                │ 3. Send Alert Notification │
+                │ 4. Stop Trading for Day │
+                └──────────────────────────────┘
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem;">📋 Parameters</h3>
+            <table class="param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ESD_MaxDailyDrawdownPercent</code></td>
+                        <td><span class="param-type">double</span></td>
+                        <td><span class="param-default">5.0</span></td>
+                        <td>Maksimal % drawdown harian sebelum stop</td>
+                    </tr>
+                    <tr>
+                        <td><code>ESD_MaxDrawdownAction</code></td>
+                        <td><span class="param-type">enum</span></td>
+                        <td><span class="param-default">CLOSE_ALL</span></td>
+                        <td>Aksi saat limit tercapai (Close All / Stop New)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 2: Market Regime -->
+        <div class="section" id="regime">
+            <div class="section-header">
+                <div class="section-number">2</div>
+                <h2>🌊 Market Regime Detection</h2>
+            </div>
+
+            <p>Sistem mendeteksi kondisi pasar (Trending/Ranging/Volatile) dan menyesuaikan parameter trading secara
+                dinamis.</p>
+
+            <div class="diagram">
+                REGIME: TRENDING BULLISH 🐂 REGIME: RANGING 🦀
+                ─────────────────────── ──────────────────
+                • Strategy: Pullback Entry • Strategy: Mean Reversion
+                • TP: Extended (Runners) • TP: Fixed (Scalping)
+                • SL: Below Swing Low • SL: Tight
+                • Lot: Aggressive • Lot: Conservative
+            </div>
+
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>💻 View Code Logic</span>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="code-block">
+                        <pre><code class="language-cpp">enum ENUM_MARKET_REGIME
+{
+    REGIME_TRENDING_BULLISH,  // Higher Highs + Higher Lows
+    REGIME_TRENDING_BEARISH,  // Lower Lows + Lower Highs
+    REGIME_RANGING_LOW_VOL,   // Low ADX, Low ATR
+    REGIME_RANGING_HIGH_VOL,  // Low ADX, High ATR (Choppy)
+    REGIME_BREAKOUT           // Sudden volatility spike
+};
+
+// Impact on Trading:
+// Trending -> Enable Trend Following Strategies
+// Ranging  -> Enable Support/Demand Bounce Strategies</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Position Sizing -->
+        <div class="section" id="sizing">
+            <div class="section-header">
+                <div class="section-number">3</div>
+                <h2>⚖️ Dynamic Position Sizing</h2>
+            </div>
+
+            <p>Kalkulasi ukuran lot otomatis berdasarkan jarak Stop Loss dan toleransi risiko per trade.</p>
+
+            <div class="diagram">
+                FORMULA:
+                ────────
+                Risk Amount = Balance * (RiskPercent / 100)
+
+                Lot Size = Risk Amount / (StopLossDistance * TickValue)
+
+                Example:
+                • Balance: $10,000
+                • Risk: 1% ($100)
+                • SL: 20 pips
+                • Lot = $100 / (20 * $10) = 0.50 Lot
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem;">📋 Parameters</h3>
+            <table class="param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ESD_RiskPercent</code></td>
+                        <td><span class="param-type">double</span></td>
+                        <td><span class="param-default">1.0</span></td>
+                        <td>Persentase risiko per trade dari balance</td>
+                    </tr>
+                    <tr>
+                        <td><code>ESD_MaxLotSize</code></td>
+                        <td><span class="param-type">double</span></td>
+                        <td><span class="param-default">10.0</span></td>
+                        <td>Batas maksimal lot size</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 4: Smart Partial TP -->
+        <div class="section" id="partial">
+            <div class="section-header">
+                <div class="section-number">4</div>
+                <h2>💰 Smart Partial Take Profit</h2>
+            </div>
+
+            <p>Mengamankan profit secara bertahap pada level-level strategis untuk mengurangi risiko psikologis.</p>
+
+            <div class="diagram">
+                ENTRY ──────────────► 1.00 Lot (Running)
+                │
+                TP 1 (Fixed/Struct) ───┼──► Close 50% (0.50 Lot) 💰
+                │ + Move SL to Breakeven 🛡️
+                │
+                TP 2 (Extension) ──────┼──► Close 25% (0.25 Lot) 💰
+                │ + Trailing Stop Active 📉
+                │
+                TP 3 (Moonbag) ────────▼──► Let it Run! 🚀
+            </div>
+        </div>
+
+        <!-- Section 5: Trailing Stop -->
+        <div class="section" id="trailing">
+            <div class="section-header">
+                <div class="section-number">5</div>
+                <h2>📉 Structure-Based Trailing Stop</h2>
+            </div>
+
+            <p>Trailing stop pintar yang mengikuti struktur pasar (Swing High/Low) bukan sekedar fix points.</p>
+
+            <div class="code-block">
+                <pre><code>Mode: STRUCTURE_BASED
+
+Bullish Trade:
+• SL moves to below recent Higher Low
+• Buffers added to prevent stop hunt
+
+Bearish Trade:
+• SL moves to above recent Lower High
+• Buffers added to prevent stop hunt</code></pre>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 3rem 0; color: var(--text-secondary);">
+            <p>ESD Trading System v2.2 • Built with 💙 for Traders</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                <a href="../README.md" style="color: var(--accent-blue); text-decoration: none;">← Back to README</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+
+    <script>
+        function toggleAccordion(header) {
+            const accordion = header.parentElement;
+            accordion.classList.toggle('active');
+        }
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Add animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>
